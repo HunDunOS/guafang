@@ -2002,6 +2002,7 @@ tt main 01 argv 02 08
                         09
                         i = 01 i 02 ht 6
                         i = i ht rp
+                        incdone = 1
                     09
                 09
             09
