@@ -97,7 +97,7 @@ tt eval 01 k 02 08
     tz v = 0
     tz r = 0
     tz q2 = 0
-    tz slot = 0
+    tz slv = 0
     tz i = 0
     tz num = 0
 
@@ -166,19 +166,19 @@ tt head 01 k 02 08
 00 ══════ 槽位表：名字 → rbp 偏移 ══════
 
 00 登记一个名字（k=记号号，槽=rbp偏移）
-tt defname 01 k , slot 02 08
+tt defname 01 k , slv 02 08
     tz n = 0
     n = nname
     nmpos[n] = gettok 01 k 02
     nmlen[n] = getlen 01 k 02
-    slotpos[n] = slot
+    slotpos[n] = slv
     argmark[n] = 0
     nname = 01 nname 02 ht 1
     zz 0
 09
 
 00 比两个名字是否相同：k=记号号，j=表中下标
-tt same 01 k , j 02 08
+tt smeq 01 k , j 02 08
     tz q1 = 0
     tz q2 = 0
     tz t = 0
@@ -248,7 +248,7 @@ tt sametok 01 k , j 02 08
 
 00 查名字：返回槽位（正数 8,16,...），找不到返回 0
 00   注意：不能返回 -1 —— 无符号比较下 -1 恒大于任何正数，
-00   且 puti 不支持负数会把 -1 打成乱码（曾出现 [rbp-w51615]）
+00   且 wnum 不支持负数会把 -1 打成乱码（曾出现 [rbp-w51615]）
 tt lookup 01 k 02 08
     tz j = 0
     tz r = 0
@@ -257,7 +257,7 @@ tt lookup 01 k 02 08
     tz f = 0
     r = 0
     ll 01 j 02 < 01 nname 02 08
-        f = same 01 k , j 02
+        f = smeq 01 k , j 02
         lr f 08
             r = slotpos[j]
             idx = j
@@ -269,7 +269,7 @@ tt lookup 01 k 02 08
 09
 
 00 ── 出数：把数字转成十进制输出（支持 0~999999）──
-tt puti 01 v 02 08
+tt wnum 01 v 02 08
     tz d = 0
     tz has = 0
     tz t = 0
@@ -332,7 +332,7 @@ tt puti 01 v 02 08
     zz 0
 09
 
-tt puts 01 s 02 08
+tt wstr 01 s 02 08
     tz i = 0
     tz c = 0
     tz p = 0
@@ -613,7 +613,7 @@ tt pl 01 n3 02 08
     t = 01 t 02 hs 01 q1 02
     lr t 08
         putb 01 9 02
-        puts 01 03mov rax, 03 02
+        wstr 01 03mov rax, 03 02
         puttok 01 n3 02
         putb 01 10 02
         zz 0
@@ -626,30 +626,30 @@ tt pl 01 n3 02 08
         f = argmark[idx]
         lr f 08
             putb 01 9 02
-            puts 01 03lea rax, [rbp+03 02
-            puti 01 q1 02
-            puts 01 03]03 02
+            wstr 01 03lea rax, [rbp+03 02
+            wnum 01 q1 02
+            wstr 01 03]03 02
             putb 01 10 02
         09
         f = 01 f 02 == 0
         lr f 08
             putb 01 9 02
-            puts 01 03lea rax, [rbp-03 02
-            puti 01 q1 02
-            puts 01 03]03 02
+            wstr 01 03lea rax, [rbp-03 02
+            wnum 01 q1 02
+            wstr 01 03]03 02
             putb 01 10 02
         09
         putb 01 9 02
-        puts 01 03mov rax, [rax]03 02
+        wstr 01 03mov rax, [rax]03 02
         putb 01 10 02
         zz 0
     09
     putb 01 9 02
-    puts 01 03mov rax, offset g_03 02
+    wstr 01 03mov rax, offset g_03 02
     mgl 01 n3 02
     putb 01 10 02
     putb 01 9 02
-    puts 01 03mov rax, [rax]03 02
+    wstr 01 03mov rax, [rax]03 02
     putb 01 10 02
     zz 0
 09
@@ -666,22 +666,22 @@ tt twoop 01 op 02 08
     c = 01 c 02 hs 255
     q2 = bytes 01 op , 1 02
     putb 01 9 02
-    puts 01 03mov rcx, rax03 02
+    wstr 01 03mov rcx, rax03 02
     putb 01 10 02
     putb 01 9 02
-    puts 01 03pop rax03 02
+    wstr 01 03pop rax03 02
     putb 01 10 02
     00 相等
     t = 01 c 02 == 61
     lr t 08
         putb 01 9 02
-        puts 01 03cmp rax, rcx03 02
+        wstr 01 03cmp rax, rcx03 02
         putb 01 10 02
         putb 01 9 02
-        puts 01 03sete al03 02
+        wstr 01 03sete al03 02
         putb 01 10 02
         putb 01 9 02
-        puts 01 03movzx rax, al03 02
+        wstr 01 03movzx rax, al03 02
         putb 01 10 02
         zz 0
     09
@@ -693,7 +693,7 @@ tt twoop 01 op 02 08
     f = 01 f 02 hr 01 t 02
     lr f 08
         putb 01 9 02
-        puts 01 03cmp rax, rcx03 02
+        wstr 01 03cmp rax, rcx03 02
         putb 01 10 02
         putb 01 9 02
         t = 01 c 02 == 60
@@ -703,21 +703,21 @@ tt twoop 01 op 02 08
             00 比较符已输出 cmp，这里只加 setcc + movzx
             t = 01 c 02 == 60
             lr t 08
-                lr 01 q2 02 == 61 08 puts 01 03setbe al03 02 09
-                lr 01 q2 02 == 0 08 puts 01 03setb al03 02 09
+                lr 01 q2 02 == 61 08 wstr 01 03setbe al03 02 09
+                lr 01 q2 02 == 0 08 wstr 01 03setb al03 02 09
             09
             t = 01 c 02 == 62
             lr t 08
-                lr 01 q2 02 == 61 08 puts 01 03setae al03 02 09
-                lr 01 q2 02 == 0 08 puts 01 03seta al03 02 09
+                lr 01 q2 02 == 61 08 wstr 01 03setae al03 02 09
+                lr 01 q2 02 == 0 08 wstr 01 03seta al03 02 09
             09
         lr 01 t 02 == 0 08
-            puts 01 03setne al03 02
+            wstr 01 03setne al03 02
         09
         09
         putb 01 10 02
         putb 01 9 02
-        puts 01 03movzx rax, al03 02
+        wstr 01 03movzx rax, al03 02
         putb 01 10 02
         zz 0
     09
@@ -726,37 +726,37 @@ tt twoop 01 op 02 08
     lr t 08
         lr 01 q2 02 == 116 08
             putb 01 9 02
-            puts 01 03add rax, rcx03 02
+            wstr 01 03add rax, rcx03 02
             putb 01 10 02
             zz 0
         09
         lr 01 q2 02 == 122 08
             putb 01 9 02
-            puts 01 03sub rax, rcx03 02
+            wstr 01 03sub rax, rcx03 02
             putb 01 10 02
             zz 0
         09
         lr 01 q2 02 == 104 08
             putb 01 9 02
-            puts 01 03imul rax, rcx03 02
+            wstr 01 03imul rax, rcx03 02
             putb 01 10 02
             zz 0
         09
         lr 01 q2 02 == 115 08
             putb 01 9 02
-            puts 01 03and rax, rcx03 02
+            wstr 01 03and rax, rcx03 02
             putb 01 10 02
             zz 0
         09
         lr 01 q2 02 == 114 08
             putb 01 9 02
-            puts 01 03or rax, rcx03 02
+            wstr 01 03or rax, rcx03 02
             putb 01 10 02
             zz 0
         09
         lr 01 q2 02 == 100 08
             putb 01 9 02
-            puts 01 03xor rax, rcx03 02
+            wstr 01 03xor rax, rcx03 02
             putb 01 10 02
             zz 0
         09
@@ -764,30 +764,30 @@ tt twoop 01 op 02 08
         f = 01 q2 02 == 108
         lr f 08
             putb 01 9 02
-            puts 01 03xor rdx, rdx03 02
+            wstr 01 03xor rdx, rdx03 02
             putb 01 10 02
             putb 01 9 02
-            puts 01 03div rcx03 02
+            wstr 01 03div rcx03 02
             putb 01 10 02
             zz 0
         09
         f = 01 q2 02 == 102
         lr f 08
             putb 01 9 02
-            puts 01 03xor rdx, rdx03 02
+            wstr 01 03xor rdx, rdx03 02
             putb 01 10 02
             putb 01 9 02
-            puts 01 03div rcx03 02
+            wstr 01 03div rcx03 02
             putb 01 10 02
             putb 01 9 02
-            puts 01 03mov rax, rdx03 02
+            wstr 01 03mov rax, rdx03 02
             putb 01 10 02
             zz 0
         09
     09
     00 兜底：什么都不是，当加法（不静默吞掉）
     putb 01 9 02
-    puts 01 03add rax, rcx03 02
+    wstr 01 03add rax, rcx03 02
     putb 01 10 02
     zz 0
 09
@@ -894,20 +894,20 @@ tt main 01 argv 02 08
     09
     cnt = n
 
-    puts 01 03MARK20403 02
-    puts 01 03[VERIFY-MARK]03 02
+    wstr 01 03MARK20403 02
+    wstr 01 03[VERIFY-MARK]03 02
     putc 01 10 02
     putb 01 10 02
 
     00 ══ 生成汇编 ══
-    puts 01 03# 由 卦方(Guafang) 编译器 gfx 生成03 02
+    wstr 01 03# 由 卦方(Guafang) 编译器 gfx 生成03 02
     putb 01 10 02
     putb 01 9 02
-    puts 01 03.intel_syntax noprefix03 02
+    wstr 01 03.intel_syntax noprefix03 02
     putb 01 10 02
     putb 01 10 02
     putb 01 9 02
-    puts 01 03.section .text03 02
+    wstr 01 03.section .text03 02
     putb 01 10 02
 
     i = 0
@@ -915,6 +915,8 @@ tt main 01 argv 02 08
         k = i
         incdone = 0
         cmp = 0
+        bname = 0
+
 
         00 ── 括号深度跟踪 + lr 的 else 标签闭合 ──
         00 记号 09 = 字节 48,57；记号 08 = 字节 48,56
@@ -939,38 +941,38 @@ tt main 01 argv 02 08
                             00 型1=lr：输出 .LelseN:
                             f = 01 n3 02 == 1
                             lr f 08
-                                puts 01 03.Lelse03 02
+                                wstr 01 03.Lelse03 02
                                 n2 = elstack[estop]
-                                puti 01 n2 02
-                                puts 01 03:03 02
+                                wnum 01 n2 02
+                                wstr 01 03:03 02
                                 putb 01 10 02
                             09
                             00 型2=ll无限：jmp .LltopT + .LlendN:
                             f = 01 n3 02 == 2
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03jmp .Lltop03 02
+                                wstr 01 03jmp .Lltop03 02
                                 n2 = topstack[estop]
-                                puti 01 n2 02
+                                wnum 01 n2 02
                                 putb 01 10 02
-                                puts 01 03.Llend03 02
+                                wstr 01 03.Llend03 02
                                 n2 = elstack[estop]
-                                puti 01 n2 02
-                                puts 01 03:03 02
+                                wnum 01 n2 02
+                                wstr 01 03:03 02
                                 putb 01 10 02
                             09
                             00 型3=ll条件：jmp .LwtopT + .LwendN:
                             f = 01 n3 02 == 3
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03jmp .Lwtop03 02
+                                wstr 01 03jmp .Lwtop03 02
                                 n2 = topstack[estop]
-                                puti 01 n2 02
+                                wnum 01 n2 02
                                 putb 01 10 02
-                                puts 01 03.Lwend03 02
+                                wstr 01 03.Lwend03 02
                                 n2 = elstack[estop]
-                                puti 01 n2 02
-                                puts 01 03:03 02
+                                wnum 01 n2 02
+                                wstr 01 03:03 02
                                 putb 01 10 02
                             09
                             estop = 01 estop 02 hz 1
@@ -1010,15 +1012,15 @@ tt main 01 argv 02 08
                 f = 01 n2 02 == 2
                 lr f 08
                     putb 01 9 02
-                    puts 01 03jmp .Llend03 02
-                    puti 01 q1 02
+                    wstr 01 03jmp .Llend03 02
+                    wnum 01 q1 02
                     putb 01 10 02
                 09
                 f = 01 n2 02 == 3
                 lr f 08
                     putb 01 9 02
-                    puts 01 03jmp .Lwend03 02
-                    puti 01 q1 02
+                    wstr 01 03jmp .Lwend03 02
+                    wnum 01 q1 02
                     putb 01 10 02
                 09
             09
@@ -1048,15 +1050,15 @@ tt main 01 argv 02 08
                 f = 01 n2 02 == 2
                 lr f 08
                     putb 01 9 02
-                    puts 01 03jmp .Lltop03 02
-                    puti 01 q1 02
+                    wstr 01 03jmp .Lltop03 02
+                    wnum 01 q1 02
                     putb 01 10 02
                 09
                 f = 01 n2 02 == 3
                 lr f 08
                     putb 01 9 02
-                    puts 01 03jmp .Lwtop03 02
-                    puti 01 q1 02
+                    wstr 01 03jmp .Lwtop03 02
+                    wnum 01 q1 02
                     putb 01 10 02
                 09
             09
@@ -1067,38 +1069,38 @@ tt main 01 argv 02 08
         lr f 08
             00 第二个函数起，先补上一个函数的尾声（有函=已见函数数，非0则补）
             lr hasfn 08
-                puts 01 03.Lret_03 02
+                wstr 01 03.Lret_03 02
                 n3 = 01 r 02
                 mgl 01 n3 02
-                puts 01 03:03 02
+                wstr 01 03:03 02
                 putb 01 10 02
                 putb 01 9 02
-                puts 01 03mov rsp, rbp03 02
+                wstr 01 03mov rsp, rbp03 02
                 putb 01 10 02
                 putb 01 9 02
-                puts 01 03pop rbp03 02
+                wstr 01 03pop rbp03 02
                 putb 01 10 02
                 putb 01 9 02
-                puts 01 03ret03 02
+                wstr 01 03ret03 02
                 putb 01 10 02
                 putb 01 10 02
             09
             r = 01 k 02 ht 1
             hasfn = 01 hasfn 02 ht 1
             putb 01 9 02
-            puts 01 03.globl fn_03 02
+            wstr 01 03.globl fn_03 02
             n3 = 01 k 02 ht 1
             mgl 01 n3 02
             putb 01 10 02
-            puts 01 03fn_03 02
+            wstr 01 03fn_03 02
             mgl 01 n3 02
-            puts 01 03:03 02
+            wstr 01 03:03 02
             putb 01 10 02
             putb 01 9 02
-            puts 01 03push rbp03 02
+            wstr 01 03push rbp03 02
             putb 01 10 02
             putb 01 9 02
-            puts 01 03mov rbp, rsp03 02
+            wstr 01 03mov rbp, rsp03 02
             putb 01 10 02
             00 预扫描本函数 tz 数量 → 16 对齐帧大小
             n2 = 01 k 02 ht 1
@@ -1117,12 +1119,12 @@ tt main 01 argv 02 08
             00 帧大小为0时不输出 sub rsp（对齐 C 版 if(framesz)）
             lr q2 08
                 putb 01 9 02
-                puts 01 03sub rsp, 03 02
-                puti 01 q2 02
+                wstr 01 03sub rsp, 03 02
+                wnum 01 q2 02
                 putb 01 10 02
             09
             putb 01 9 02
-            puts 01 03mov rax, 003 02
+            wstr 01 03mov rax, 003 02
             putb 01 10 02
             00 函数开始重置局部名字表（C版 nvars=0），在登记参数之前
             nname = 0
@@ -1169,7 +1171,8 @@ tt main 01 argv 02 08
                 09
                 n3 = 01 n3 02 ht 1
             09
-            i = 01 i 02 ht 1
+            00 跳过整个声明头：tt 名字 01 参数… 02 08（n3 停在 02 上）
+            i = 01 n3 02 ht 1
         09
 
         00 tz 名字 = 数字   四个记号：tz / 名字 / = / 数字
@@ -1179,14 +1182,14 @@ tt main 01 argv 02 08
             n3 = 01 k 02 ht 1
             defname 01 n3 , slot 02
             putb 01 9 02
-            puts 01 03mov rax, 03 02
+            wstr 01 03mov rax, 03 02
             n3 = 01 k 02 ht 3
             puttok 01 n3 02
             putb 01 10 02
             putb 01 9 02
-            puts 01 03mov [rbp-03 02
-            puti 01 slot 02
-            puts 01 03], rax03 02
+            wstr 01 03mov [rbp-03 02
+            wnum 01 slot 02
+            wstr 01 03], rax03 02
             putb 01 10 02
             i = 01 i 02 ht 3
         09
@@ -1204,12 +1207,12 @@ tt main 01 argv 02 08
                 f = 01 f 02 hs 01 q1 02
                 lr f 08
                     putb 01 9 02
-                    puts 01 03mov rax, rsp03 02
+                    wstr 01 03mov rax, rsp03 02
                     putb 01 10 02
                     putb 01 9 02
-                    puts 01 03mov [rbp-03 02
-                    puti 01 n2 02
-                    puts 01 03], rax03 02
+                    wstr 01 03mov [rbp-03 02
+                    wnum 01 n2 02
+                    wstr 01 03], rax03 02
                     putb 01 10 02
                     i = 01 i 02 ht 2
                     incdone = 1
@@ -1267,35 +1270,35 @@ tt main 01 argv 02 08
                     lr f 08
                         lr q2 08
                             putb 01 9 02
-                            puts 01 03mov [rbp+03 02
-                            puti 01 n2 02
-                            puts 01 03], rax03 02
+                            wstr 01 03mov [rbp+03 02
+                            wnum 01 n2 02
+                            wstr 01 03], rax03 02
                             putb 01 10 02
                         09
                         q1 = 01 q2 02 == 0
                         lr q1 08
                             putb 01 9 02
-                            puts 01 03mov [rbp-03 02
-                            puti 01 n2 02
-                            puts 01 03], rax03 02
+                            wstr 01 03mov [rbp-03 02
+                            wnum 01 n2 02
+                            wstr 01 03], rax03 02
                             putb 01 10 02
                         09
                     09
                     q1 = 01 f 02 == 0
                     lr q1 08
                         putb 01 9 02
-                        puts 01 03push rax03 02
+                        wstr 01 03push rax03 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03mov rax, offset g_03 02
+                        wstr 01 03mov rax, offset g_03 02
                         n3 = 01 k 02
                         mgl 01 n3 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03pop rcx03 02
+                        wstr 01 03pop rcx03 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03mov [rax], rcx03 02
+                        wstr 01 03mov [rax], rcx03 02
                         putb 01 10 02
                     09
                     i = 01 i 02 ht 2
@@ -1372,7 +1375,7 @@ tt main 01 argv 02 08
                     n3 = 01 k 02 ht 2
                     pl 01 n3 02
                     putb 01 9 02
-                    puts 01 03push rax03 02
+                    wstr 01 03push rax03 02
                     putb 01 10 02
                     00 右值 k+4；若是 01 X 02 则取 k+5，i 多进 2
                     n3 = 01 k 02 ht 4
@@ -1406,17 +1409,17 @@ tt main 01 argv 02 08
                     f = argmark[idx]
                     lr f 08
                         putb 01 9 02
-                        puts 01 03mov [rbp+03 02
-                        puti 01 n2 02
-                        puts 01 03], rax03 02
+                        wstr 01 03mov [rbp+03 02
+                        wnum 01 n2 02
+                        wstr 01 03], rax03 02
                         putb 01 10 02
                     09
                     f = 01 f 02 == 0
                     lr f 08
                         putb 01 9 02
-                        puts 01 03mov [rbp-03 02
-                        puti 01 n2 02
-                        puts 01 03], rax03 02
+                        wstr 01 03mov [rbp-03 02
+                        wnum 01 n2 02
+                        wstr 01 03], rax03 02
                         putb 01 10 02
                     09
                     i = 01 i 02 ht 4
@@ -1449,7 +1452,7 @@ tt main 01 argv 02 08
             t = 01 t 02 hs 01 q2 02
             lr t 08
                 putb 01 9 02
-                puts 01 03mov rax, 03 02
+                wstr 01 03mov rax, 03 02
                 n3 = 01 k 02 ht 2
                 puttok 01 n3 02
                 putb 01 10 02
@@ -1457,17 +1460,17 @@ tt main 01 argv 02 08
                 f = argmark[idx]
                 lr f 08
                     putb 01 9 02
-                    puts 01 03mov [rbp+03 02
-                    puti 01 n2 02
-                    puts 01 03], rax03 02
+                    wstr 01 03mov [rbp+03 02
+                    wnum 01 n2 02
+                    wstr 01 03], rax03 02
                     putb 01 10 02
                 09
                 f = 01 f 02 == 0
                 lr f 08
                     putb 01 9 02
-                    puts 01 03mov [rbp-03 02
-                    puti 01 n2 02
-                    puts 01 03], rax03 02
+                    wstr 01 03mov [rbp-03 02
+                    wnum 01 n2 02
+                    wstr 01 03], rax03 02
                     putb 01 10 02
                 09
                 i = 01 i 02 ht 2
@@ -1500,23 +1503,23 @@ tt main 01 argv 02 08
                         t = 01 t 02 hs 01 f2 02
                         lr t 08
                             putb 01 9 02
-                            puts 01 03mov rax, 03 02
+                            wstr 01 03mov rax, 03 02
                             n3 = 01 k 02 ht 2
                             puttok 01 n3 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03push rax03 02
+                            wstr 01 03push rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03mov rax, offset g_03 02
+                            wstr 01 03mov rax, offset g_03 02
                             n3 = 01 k 02
                             mgl 01 n3 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03pop rcx03 02
+                            wstr 01 03pop rcx03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03mov [rax], rcx03 02
+                            wstr 01 03mov [rax], rcx03 02
                             putb 01 10 02
                             i = 01 i 02 ht 2
                             incdone = 1
@@ -1538,54 +1541,54 @@ tt main 01 argv 02 08
                     f = 01 c 02 == 104
                     lr f 08
                         putb 01 9 02
-                        puts 01 03mov rax, offset g_03 02
+                        wstr 01 03mov rax, offset g_03 02
                         n3 = 01 k 02
                         mgl 01 n3 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03mov rax, [rax]03 02
+                        wstr 01 03mov rax, [rax]03 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03push rax03 02
+                        wstr 01 03push rax03 02
                         putb 01 10 02
                         n3 = 01 k 02 ht 6
                         putb 01 9 02
-                        puts 01 03mov rax, 03 02
+                        wstr 01 03mov rax, 03 02
                         puttok 01 n3 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03mov rcx, rax03 02
+                        wstr 01 03mov rcx, rax03 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03pop rax03 02
+                        wstr 01 03pop rax03 02
                         putb 01 10 02
                         n3 = 01 k 02 ht 5
                         q2 = bytes 01 n3 , 1 02
                         f = 01 q2 02 == 116
                         lr f 08
                             putb 01 9 02
-                            puts 01 03add rax, rcx03 02
+                            wstr 01 03add rax, rcx03 02
                             putb 01 10 02
                         09
                         f = 01 q2 02 == 122
                         lr f 08
                             putb 01 9 02
-                            puts 01 03sub rax, rcx03 02
+                            wstr 01 03sub rax, rcx03 02
                             putb 01 10 02
                         09
                         putb 01 9 02
-                        puts 01 03push rax03 02
+                        wstr 01 03push rax03 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03mov rax, offset g_03 02
+                        wstr 01 03mov rax, offset g_03 02
                         n3 = 01 k 02
                         mgl 01 n3 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03pop rcx03 02
+                        wstr 01 03pop rcx03 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03mov [rax], rcx03 02
+                        wstr 01 03mov [rax], rcx03 02
                         putb 01 10 02
                         i = 01 i 02 ht 6
                         incdone = 1
@@ -1603,23 +1606,23 @@ tt main 01 argv 02 08
                 q2 = findall 01 k 02
                 lr q2 08
                     putb 01 9 02
-                    puts 01 03mov rax, 03 02
+                    wstr 01 03mov rax, 03 02
                     n3 = 01 k 02 ht 2
                     puttok 01 n3 02
                     putb 01 10 02
                     putb 01 9 02
-                    puts 01 03push rax03 02
+                    wstr 01 03push rax03 02
                     putb 01 10 02
                     putb 01 9 02
-                    puts 01 03mov rax, offset g_03 02
+                    wstr 01 03mov rax, offset g_03 02
                     n3 = 01 k 02
                     mgl 01 n3 02
                     putb 01 10 02
                     putb 01 9 02
-                    puts 01 03pop rcx03 02
+                    wstr 01 03pop rcx03 02
                     putb 01 10 02
                     putb 01 9 02
-                    puts 01 03mov [rax], rcx03 02
+                    wstr 01 03mov [rax], rcx03 02
                     putb 01 10 02
                     i = 01 i 02 ht 2
                 09
@@ -1656,7 +1659,7 @@ tt main 01 argv 02 08
                         f = 01 f 02 hs 01 q2 02
                         lr f 08
                             putb 01 9 02
-                            puts 01 03mov rax, 03 02
+                            wstr 01 03mov rax, 03 02
                             puttok 01 n3 02
                             putb 01 10 02
                             numleft = 1
@@ -1673,17 +1676,17 @@ tt main 01 argv 02 08
                             f = argmark[idx]
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03lea rax, [rbp+03 02
-                                puti 01 n2 02
-                                puts 01 03]03 02
+                                wstr 01 03lea rax, [rbp+03 02
+                                wnum 01 n2 02
+                                wstr 01 03]03 02
                                 putb 01 10 02
                             09
                             q2 = 01 f 02 == 0
                             lr q2 08
                                 putb 01 9 02
-                                puts 01 03lea rax, [rbp-03 02
-                                puti 01 n2 02
-                                puts 01 03]03 02
+                                wstr 01 03lea rax, [rbp-03 02
+                                wnum 01 n2 02
+                                wstr 01 03]03 02
                                 putb 01 10 02
                             09
                         09
@@ -1691,7 +1694,7 @@ tt main 01 argv 02 08
                         lr q2 08
                             00 全局：mov rax,offset g_X；标量(全大==8)再 load
                             putb 01 9 02
-                            puts 01 03mov rax, offset g_03 02
+                            wstr 01 03mov rax, offset g_03 02
                             mgl 01 n3 02
                             putb 01 10 02
                             n2 = findall 01 n3 02
@@ -1705,12 +1708,12 @@ tt main 01 argv 02 08
                         q2 = 01 noload 02 == 0
                         lr q2 08
                             putb 01 9 02
-                            puts 01 03mov rax, [rax]03 02
+                            wstr 01 03mov rax, [rax]03 02
                             putb 01 10 02
                         09
                         09
                         putb 01 9 02
-                        puts 01 03push rax03 02
+                        wstr 01 03push rax03 02
                         putb 01 10 02
                         00 右值 = k+6；若是 01 X 02（k+6='01' 且 k+8='02'）则取 k+7，右括=2
                         n3 = 01 k 02 ht 6
@@ -1743,7 +1746,7 @@ tt main 01 argv 02 08
                         t = 01 t 02 hs 01 q2 02
                         lr t 08
                             putb 01 9 02
-                            puts 01 03mov rax, 03 02
+                            wstr 01 03mov rax, 03 02
                             puttok 01 n3 02
                             putb 01 10 02
                         09
@@ -1759,11 +1762,11 @@ tt main 01 argv 02 08
                             09
                             lr q2 08
                                 putb 01 9 02
-                                puts 01 03mov rax, offset g_03 02
+                                wstr 01 03mov rax, offset g_03 02
                                 mgl 01 n3 02
                                 putb 01 10 02
                                 putb 01 9 02
-                                puts 01 03mov rax, [rax]03 02
+                                wstr 01 03mov rax, [rax]03 02
                                 putb 01 10 02
                             09
                             t = 01 t 02 hr 01 q2 02
@@ -1771,21 +1774,21 @@ tt main 01 argv 02 08
                                 f = argmark[idx]
                                 lr f 08
                                     putb 01 9 02
-                                    puts 01 03lea rax, [rbp+03 02
-                                    puti 01 q1 02
-                                    puts 01 03]03 02
+                                    wstr 01 03lea rax, [rbp+03 02
+                                    wnum 01 q1 02
+                                    wstr 01 03]03 02
                                     putb 01 10 02
                                 09
                                 t = 01 f 02 == 0
                                 lr t 08
                                     putb 01 9 02
-                                    puts 01 03lea rax, [rbp-03 02
-                                    puti 01 q1 02
-                                    puts 01 03]03 02
+                                    wstr 01 03lea rax, [rbp-03 02
+                                    wnum 01 q1 02
+                                    wstr 01 03]03 02
                                     putb 01 10 02
                                 09
                                 putb 01 9 02
-                                puts 01 03mov rax, [rax]03 02
+                                wstr 01 03mov rax, [rax]03 02
                                 putb 01 10 02
                             09
                         09
@@ -1796,19 +1799,19 @@ tt main 01 argv 02 08
                         t = 01 c 02 == 61
                         lr t 08
                             putb 01 9 02
-                            puts 01 03mov rcx, rax03 02
+                            wstr 01 03mov rcx, rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03pop rax03 02
+                            wstr 01 03pop rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03cmp rax, rcx03 02
+                            wstr 01 03cmp rax, rcx03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03sete al03 02
+                            wstr 01 03sete al03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03movzx rax, al03 02
+                            wstr 01 03movzx rax, al03 02
                             putb 01 10 02
                         09
                         00 其余比较：< > <= >= != → cmp + setcc + movzx
@@ -1823,13 +1826,13 @@ tt main 01 argv 02 08
                         f = 01 f 02 hr 01 t 02
                         lr f 08
                             putb 01 9 02
-                            puts 01 03mov rcx, rax03 02
+                            wstr 01 03mov rcx, rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03pop rax03 02
+                            wstr 01 03pop rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03cmp rax, rcx03 02
+                            wstr 01 03cmp rax, rcx03 02
                             putb 01 10 02
                             00 判第二字节是否 61(=)
                             n3 = 01 k 02 ht 5
@@ -1840,13 +1843,13 @@ tt main 01 argv 02 08
                             lr t 08
                                 lr f2 08
                                     putb 01 9 02
-                                    puts 01 03setbe al03 02
+                                    wstr 01 03setbe al03 02
                                     putb 01 10 02
                                 09
                                 q1 = 01 f2 02 == 0
                                 lr q1 08
                                     putb 01 9 02
-                                    puts 01 03setb al03 02
+                                    wstr 01 03setb al03 02
                                     putb 01 10 02
                                 09
                             09
@@ -1855,13 +1858,13 @@ tt main 01 argv 02 08
                             lr t 08
                                 lr f2 08
                                     putb 01 9 02
-                                    puts 01 03setae al03 02
+                                    wstr 01 03setae al03 02
                                     putb 01 10 02
                                 09
                                 q1 = 01 f2 02 == 0
                                 lr q1 08
                                     putb 01 9 02
-                                    puts 01 03seta al03 02
+                                    wstr 01 03seta al03 02
                                     putb 01 10 02
                                 09
                             09
@@ -1869,11 +1872,11 @@ tt main 01 argv 02 08
                             t = 01 c 02 == 33
                             lr t 08
                                 putb 01 9 02
-                                puts 01 03setne al03 02
+                                wstr 01 03setne al03 02
                                 putb 01 10 02
                             09
                             putb 01 9 02
-                            puts 01 03movzx rax, al03 02
+                            wstr 01 03movzx rax, al03 02
                             putb 01 10 02
                         09
                         00 算术运算：op token 首字节 h(104) → ht加/hz减/hh乘 等
@@ -1882,74 +1885,74 @@ tt main 01 argv 02 08
                             n3 = 01 k 02 ht 5
                             q2 = bytes 01 n3 , 1 02
                             putb 01 9 02
-                            puts 01 03mov rcx, rax03 02
+                            wstr 01 03mov rcx, rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03pop rax03 02
+                            wstr 01 03pop rax03 02
                             putb 01 10 02
                             00 ht → add
                             f = 01 q2 02 == 116
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03add rax, rcx03 02
+                                wstr 01 03add rax, rcx03 02
                                 putb 01 10 02
                             09
                             00 hz → sub
                             f = 01 q2 02 == 122
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03sub rax, rcx03 02
+                                wstr 01 03sub rax, rcx03 02
                                 putb 01 10 02
                             09
                             00 hh → imul
                             f = 01 q2 02 == 104
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03imul rax, rcx03 02
+                                wstr 01 03imul rax, rcx03 02
                                 putb 01 10 02
                             09
                             00 hs → and
                             f = 01 q2 02 == 115
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03and rax, rcx03 02
+                                wstr 01 03and rax, rcx03 02
                                 putb 01 10 02
                             09
                             00 hr → or
                             f = 01 q2 02 == 114
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03or rax, rcx03 02
+                                wstr 01 03or rax, rcx03 02
                                 putb 01 10 02
                             09
                             00 hd → xor
                             f = 01 q2 02 == 100
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03xor rax, rcx03 02
+                                wstr 01 03xor rax, rcx03 02
                                 putb 01 10 02
                             09
                             00 hl → div (rdx清零)
                             f = 01 q2 02 == 108
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03xor rdx, rdx03 02
+                                wstr 01 03xor rdx, rdx03 02
                                 putb 01 10 02
                                 putb 01 9 02
-                                puts 01 03div rcx03 02
+                                wstr 01 03div rcx03 02
                                 putb 01 10 02
                             09
                             00 hf → mod (rdx清零, div, 取rdx)
                             f = 01 q2 02 == 102
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03xor rdx, rdx03 02
+                                wstr 01 03xor rdx, rdx03 02
                                 putb 01 10 02
                                 putb 01 9 02
-                                puts 01 03div rcx03 02
+                                wstr 01 03div rcx03 02
                                 putb 01 10 02
                                 putb 01 9 02
-                                puts 01 03mov rax, rdx03 02
+                                wstr 01 03mov rax, rdx03 02
                                 putb 01 10 02
                             09
                         09
@@ -1959,23 +1962,23 @@ tt main 01 argv 02 08
                             n3 = 01 k 02 ht 5
                             q2 = bytes 01 n3 , 1 02
                             putb 01 9 02
-                            puts 01 03mov rcx, rax03 02
+                            wstr 01 03mov rcx, rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03pop rax03 02
+                            wstr 01 03pop rax03 02
                             putb 01 10 02
                             00 dh → shl
                             f = 01 q2 02 == 104
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03shl rax, cl03 02
+                                wstr 01 03shl rax, cl03 02
                                 putb 01 10 02
                             09
                             00 dl → shr
                             f = 01 q2 02 == 108
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03shr rax, cl03 02
+                                wstr 01 03shr rax, cl03 02
                                 putb 01 10 02
                             09
                         09
@@ -1984,17 +1987,17 @@ tt main 01 argv 02 08
                         f = argmark[idx]
                         lr f 08
                             putb 01 9 02
-                            puts 01 03mov [rbp+03 02
-                            puti 01 n2 02
-                            puts 01 03], rax03 02
+                            wstr 01 03mov [rbp+03 02
+                            wnum 01 n2 02
+                            wstr 01 03], rax03 02
                             putb 01 10 02
                         09
                         f = 01 f 02 == 0
                         lr f 08
                             putb 01 9 02
-                            puts 01 03mov [rbp-03 02
-                            puti 01 n2 02
-                            puts 01 03], rax03 02
+                            wstr 01 03mov [rbp-03 02
+                            wnum 01 n2 02
+                            wstr 01 03], rax03 02
                             putb 01 10 02
                         09
                         i = 01 i 02 ht 6
@@ -2026,7 +2029,7 @@ tt main 01 argv 02 08
                     lr t 08
                         00 左值全局：offset g_X；标量(全大==8)再 load，数组名仅取地址
                         putb 01 9 02
-                        puts 01 03mov rax, offset g_03 02
+                        wstr 01 03mov rax, offset g_03 02
                         n3 = 01 k 02 ht 2
                         mgl 01 n3 02
                         putb 01 10 02
@@ -2034,11 +2037,11 @@ tt main 01 argv 02 08
                         f = 01 q2 02 == 8
                         lr f 08
                             putb 01 9 02
-                            puts 01 03mov rax, [rax]03 02
+                            wstr 01 03mov rax, [rax]03 02
                             putb 01 10 02
                         09
                         putb 01 9 02
-                        puts 01 03push rax03 02
+                        wstr 01 03push rax03 02
                         putb 01 10 02
                         00 右值 k+4：全局→offset+load；否则局部/参数→lea+load
                         n3 = 01 k 02 ht 4
@@ -2052,12 +2055,12 @@ tt main 01 argv 02 08
                         09
                         lr q2 08
                             putb 01 9 02
-                            puts 01 03mov rax, offset g_03 02
+                            wstr 01 03mov rax, offset g_03 02
                             n3 = 01 k 02 ht 4
                             mgl 01 n3 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03mov rax, [rax]03 02
+                            wstr 01 03mov rax, [rax]03 02
                             putb 01 10 02
                         09
                         lr t 08
@@ -2066,39 +2069,39 @@ tt main 01 argv 02 08
                             f = argmark[idx]
                             lr f 08
                                 putb 01 9 02
-                                puts 01 03lea rax, [rbp+03 02
-                                puti 01 q1 02
-                                puts 01 03]03 02
+                                wstr 01 03lea rax, [rbp+03 02
+                                wnum 01 q1 02
+                                wstr 01 03]03 02
                                 putb 01 10 02
                             09
                             t = 01 f 02 == 0
                             lr t 08
                                 putb 01 9 02
-                                puts 01 03lea rax, [rbp-03 02
-                                puti 01 q1 02
-                                puts 01 03]03 02
+                                wstr 01 03lea rax, [rbp-03 02
+                                wnum 01 q1 02
+                                wstr 01 03]03 02
                                 putb 01 10 02
                             09
                             putb 01 9 02
-                            puts 01 03mov rax, [rax]03 02
+                            wstr 01 03mov rax, [rax]03 02
                             putb 01 10 02
                         09
                         00 op: mov rcx,rax / pop rax / add rax,rcx
                         putb 01 9 02
-                        puts 01 03mov rcx, rax03 02
+                        wstr 01 03mov rcx, rax03 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03pop rax03 02
+                        wstr 01 03pop rax03 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03add rax, rcx03 02
+                        wstr 01 03add rax, rcx03 02
                         putb 01 10 02
                         00 存回目标：mov [rbp-slot], rax
                         n2 = lookup 01 k 02
                         putb 01 9 02
-                        puts 01 03mov [rbp-03 02
-                        puti 01 n2 02
-                        puts 01 03], rax03 02
+                        wstr 01 03mov [rbp-03 02
+                        wnum 01 n2 02
+                        wstr 01 03], rax03 02
                         putb 01 10 02
                         i = 01 i 02 ht 4
                     09
@@ -2129,7 +2132,7 @@ tt main 01 argv 02 08
                         t = 01 v2 02 >= 8
                         lr t 08
                             putb 01 9 02
-                            puts 01 03mov rax, offset g_03 02
+                            wstr 01 03mov rax, offset g_03 02
                             n3 = 01 k 02
                             mgl 01 n3 02
                             putb 01 10 02
@@ -2138,45 +2141,45 @@ tt main 01 argv 02 08
                             pl 01 n3 02
                             00 越界检查
                             putb 01 9 02
-                            puts 01 03cmp rax, 03 02
+                            wstr 01 03cmp rax, 03 02
                             q1 = 01 v2 02 hl 8
-                            puti 01 q1 02
+                            wnum 01 q1 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03jb .Lbok03 02
+                            wstr 01 03jb .Lbok03 02
                             elno = 01 elno 02 ht 1
                             q1 = elno
-                            puti 01 q1 02
+                            wnum 01 q1 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03call _rt_oob03 02
+                            wstr 01 03call _rt_oob03 02
                             putb 01 10 02
-                            puts 01 03.Lbok03 02
-                            puti 01 q1 02
-                            puts 01 03:03 02
-                            putb 01 10 02
-                            putb 01 9 02
-                            puts 01 03imul rax, 803 02
+                            wstr 01 03.Lbok03 02
+                            wnum 01 q1 02
+                            wstr 01 03:03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03push rax03 02
+                            wstr 01 03imul rax, 803 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03mov rax, offset g_03 02
+                            wstr 01 03push rax03 02
+                            putb 01 10 02
+                            putb 01 9 02
+                            wstr 01 03mov rax, offset g_03 02
                             n3 = 01 k 02
                             mgl 01 n3 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03mov rcx, rax03 02
+                            wstr 01 03mov rcx, rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03pop rax03 02
+                            wstr 01 03pop rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03add rax, rcx03 02
+                            wstr 01 03add rax, rcx03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03push rax03 02
+                            wstr 01 03push rax03 02
                             putb 01 10 02
                             00 右值 k+5：字母→调用或变量；否则载荷
                             endp = 0
@@ -2192,7 +2195,7 @@ tt main 01 argv 02 08
                                     n3 = 01 k 02 ht 6
                                     pl 01 n3 02
                                     putb 01 9 02
-                                    puts 01 03push rax03 02
+                                    wstr 01 03push rax03 02
                                     putb 01 10 02
                                     00 B 侧是否也是 01 ... 02
                                     n2 = 01 k 02 ht 9
@@ -2207,7 +2210,7 @@ tt main 01 argv 02 08
                                         n3 = 01 k 02 ht 10
                                         pl 01 n3 02
                                         putb 01 9 02
-                                        puts 01 03push rax03 02
+                                        wstr 01 03push rax03 02
                                         putb 01 10 02
                                         n3 = 01 k 02 ht 12
                                         pl 01 n3 02
@@ -2268,22 +2271,22 @@ tt main 01 argv 02 08
                                         n3 = apos
                                         pl 01 n3 02
                                         putb 01 9 02
-                                        puts 01 03push rax03 02
+                                        wstr 01 03push rax03 02
                                         putb 01 10 02
                                         n = 01 n 02 ht 1
                                         apos = 01 apos 02 ht 1
                                     09
                                     putb 01 9 02
-                                    puts 01 03call fn_03 02
+                                    wstr 01 03call fn_03 02
                                     n3 = 01 k 02 ht 5
                                     mgl 01 n3 02
                                     putb 01 10 02
                                     t = 01 n 02 > 0
                                     lr t 08
                                         putb 01 9 02
-                                        puts 01 03add rsp, 03 02
+                                        wstr 01 03add rsp, 03 02
                                         q1 = 01 n 02 hh 8
-                                        puti 01 q1 02
+                                        wnum 01 q1 02
                                         putb 01 10 02
                                     09
                                     endp = apos
@@ -2296,13 +2299,13 @@ tt main 01 argv 02 08
                                 endp = 01 k 02 ht 5
                             09
                             putb 01 9 02
-                            puts 01 03mov rcx, rax03 02
+                            wstr 01 03mov rcx, rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03pop rax03 02
+                            wstr 01 03pop rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03mov [rax], rcx03 02
+                            wstr 01 03mov [rax], rcx03 02
                             putb 01 10 02
                             i = 01 endp 02
                         09
@@ -2336,7 +2339,7 @@ tt main 01 argv 02 08
                         lr t 08
                             00 基址 offset（先输出）
                             putb 01 9 02
-                            puts 01 03mov rax, offset g_03 02
+                            wstr 01 03mov rax, offset g_03 02
                             n3 = 01 k 02 ht 2
                             mgl 01 n3 02
                             putb 01 10 02
@@ -2353,7 +2356,7 @@ tt main 01 argv 02 08
                                 n3 = 01 k 02 ht 5
                                 pl 01 n3 02
                                 putb 01 9 02
-                                puts 01 03push rax03 02
+                                wstr 01 03push rax03 02
                                 putb 01 10 02
                                 n3 = 01 k 02 ht 7
                                 pl 01 n3 02
@@ -2371,7 +2374,7 @@ tt main 01 argv 02 08
                             t = 01 t 02 hs 01 q2 02
                             lr t 08
                                 putb 01 9 02
-                                puts 01 03mov rax, 03 02
+                                wstr 01 03mov rax, 03 02
                                 puttok 01 n3 02
                                 putb 01 10 02
                             09
@@ -2381,72 +2384,72 @@ tt main 01 argv 02 08
                                 f2 = argmark[idx]
                                 lr f2 08
                                     putb 01 9 02
-                                    puts 01 03lea rax, [rbp+03 02
-                                    puti 01 q1 02
-                                    puts 01 03]03 02
+                                    wstr 01 03lea rax, [rbp+03 02
+                                    wnum 01 q1 02
+                                    wstr 01 03]03 02
                                     putb 01 10 02
                                 09
                                 t = 01 f2 02 == 0
                                 lr t 08
                                     putb 01 9 02
-                                    puts 01 03lea rax, [rbp-03 02
-                                    puti 01 q1 02
-                                    puts 01 03]03 02
+                                    wstr 01 03lea rax, [rbp-03 02
+                                    wnum 01 q1 02
+                                    wstr 01 03]03 02
                                     putb 01 10 02
                                 09
                                 putb 01 9 02
-                                puts 01 03mov rax, [rax]03 02
+                                wstr 01 03mov rax, [rax]03 02
                                 putb 01 10 02
                             09
                             09
                             00 越界检查：cmp rax,count / jb .LbokN / call _rt_oob / .LbokN:
                             putb 01 9 02
-                            puts 01 03cmp rax, 03 02
+                            wstr 01 03cmp rax, 03 02
                             q1 = 01 v2 02 hl 8
-                            puti 01 q1 02
+                            wnum 01 q1 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03jb .Lbok03 02
+                            wstr 01 03jb .Lbok03 02
                             elno = 01 elno 02 ht 1
                             q1 = elno
-                            puti 01 q1 02
+                            wnum 01 q1 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03call _rt_oob03 02
+                            wstr 01 03call _rt_oob03 02
                             putb 01 10 02
-                            puts 01 03.Lbok03 02
-                            puti 01 q1 02
-                            puts 01 03:03 02
+                            wstr 01 03.Lbok03 02
+                            wnum 01 q1 02
+                            wstr 01 03:03 02
                             putb 01 10 02
                             00 imul 8 / push / 基址 / rcx / pop / add / load / 存回
                             putb 01 9 02
-                            puts 01 03imul rax, 803 02
+                            wstr 01 03imul rax, 803 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03push rax03 02
+                            wstr 01 03push rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03mov rax, offset g_03 02
+                            wstr 01 03mov rax, offset g_03 02
                             n3 = 01 k 02 ht 2
                             mgl 01 n3 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03mov rcx, rax03 02
+                            wstr 01 03mov rcx, rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03pop rax03 02
+                            wstr 01 03pop rax03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03add rax, rcx03 02
+                            wstr 01 03add rax, rcx03 02
                             putb 01 10 02
                             putb 01 9 02
-                            puts 01 03mov rax, [rax]03 02
+                            wstr 01 03mov rax, [rax]03 02
                             putb 01 10 02
                             n2 = lookup 01 k 02
                             putb 01 9 02
-                            puts 01 03mov [rbp-03 02
-                            puti 01 n2 02
-                            puts 01 03], rax03 02
+                            wstr 01 03mov [rbp-03 02
+                            wnum 01 n2 02
+                            wstr 01 03], rax03 02
                             putb 01 10 02
                             i = 01 i 02 ht 5
                         09
@@ -2476,8 +2479,8 @@ tt main 01 argv 02 08
                         zzdone = 1
                         n2 = regstr 01 n3 02
                         putb 01 9 02
-                        puts 01 03mov rax, offset .Lstr03 02
-                        puti 01 n2 02
+                        wstr 01 03mov rax, offset .Lstr03 02
+                        wnum 01 n2 02
                         putb 01 10 02
                     09
                 09
@@ -2492,7 +2495,7 @@ tt main 01 argv 02 08
                 00 数字：mov rax, 值
                 zzdone = 1
                 putb 01 9 02
-                puts 01 03mov rax, 03 02
+                wstr 01 03mov rax, 03 02
                 n3 = 01 k 02 ht 1
                 puttok 01 n3 02
                 putb 01 10 02
@@ -2511,12 +2514,12 @@ tt main 01 argv 02 08
                 09
                 lr q2 08
                     putb 01 9 02
-                    puts 01 03mov rax, offset g_03 02
+                    wstr 01 03mov rax, offset g_03 02
                     n2 = 01 k 02 ht 1
                     mgl 01 n2 02
                     putb 01 10 02
                     putb 01 9 02
-                    puts 01 03mov rax, [rax]03 02
+                    wstr 01 03mov rax, [rax]03 02
                     putb 01 10 02
                 09
                 q2 = 01 f2 02 == 0
@@ -2524,26 +2527,26 @@ tt main 01 argv 02 08
                     f = argmark[idx]
                     lr f 08
                         putb 01 9 02
-                        puts 01 03lea rax, [rbp+03 02
-                        puti 01 n2 02
-                        puts 01 03]03 02
+                        wstr 01 03lea rax, [rbp+03 02
+                        wnum 01 n2 02
+                        wstr 01 03]03 02
                         putb 01 10 02
                     09
                     t = 01 f 02 == 0
                     lr t 08
                         putb 01 9 02
-                        puts 01 03lea rax, [rbp-03 02
-                        puti 01 n2 02
-                        puts 01 03]03 02
+                        wstr 01 03lea rax, [rbp-03 02
+                        wnum 01 n2 02
+                        wstr 01 03]03 02
                         putb 01 10 02
                     09
                     putb 01 9 02
-                    puts 01 03mov rax, [rax]03 02
+                    wstr 01 03mov rax, [rax]03 02
                     putb 01 10 02
                 09
             09
             putb 01 9 02
-            puts 01 03jmp .Lret_03 02
+            wstr 01 03jmp .Lret_03 02
             n3 = 01 r 02
             mgl 01 n3 02
             putb 01 10 02
@@ -2564,7 +2567,7 @@ tt main 01 argv 02 08
                 n3 = 01 k 02 ht 2
                 pl 01 n3 02
                 putb 01 9 02
-                puts 01 03push rax03 02
+                wstr 01 03push rax03 02
                 putb 01 10 02
                 00 判 k+3 是否为 02 编码 → 决定形态
                 n3 = 01 k 02 ht 3
@@ -2589,29 +2592,30 @@ tt main 01 argv 02 08
                 pl 01 n3 02
                 twoop 01 q1 02
                 putb 01 9 02
-                puts 01 03test rax, rax03 02
+                wstr 01 03test rax, rax03 02
                 putb 01 10 02
             09
             lr 01 cmp 02 == 0 08
                 00 变量形态
                 n3 = lookup 01 n2 02
                 putb 01 9 02
-                puts 01 03lea rax, [rbp-03 02
-                puti 01 n3 02
-                puts 01 03]03 02
+                wstr 01 03lea rax, [rbp-03 02
+                wnum 01 n3 02
+                wstr 01 03]03 02
                 putb 01 10 02
                 putb 01 9 02
-                puts 01 03mov rax, [rax]03 02
+                wstr 01 03mov rax, [rax]03 02
                 putb 01 10 02
                 putb 01 9 02
-                puts 01 03test rax, rax03 02
+                wstr 01 03test rax, rax03 02
                 putb 01 10 02
+                i = 01 k 02 ht 1
             09
             cmp = 0
             elno = 01 elno 02 ht 1
             putb 01 9 02
-            puts 01 03jz .Lelse03 02
-            puti 01 elno 02
+            wstr 01 03jz .Lelse03 02
+            wnum 01 elno 02
             putb 01 10 02
             estop = 01 estop 02 ht 1
             elstack[estop] = elno
@@ -2628,36 +2632,37 @@ tt main 01 argv 02 08
             n2 = 01 k 02 ht 1
             pl 01 n2 02
             putb 01 9 02
-            puts 01 03push rax03 02
+            wstr 01 03push rax03 02
             putb 01 10 02
             n2 = 01 k 02 ht 2
             pl 01 n2 02
             putb 01 9 02
-            puts 01 03mov rcx, rax03 02
+            wstr 01 03mov rcx, rax03 02
             putb 01 10 02
             putb 01 9 02
-            puts 01 03pop rax03 02
+            wstr 01 03pop rax03 02
             putb 01 10 02
             putb 01 9 02
-            puts 01 03cmp rax, rcx03 02
+            wstr 01 03cmp rax, rcx03 02
             putb 01 10 02
             elno = 01 elno 02 ht 1
             putb 01 9 02
             f = 01 cmp 02 == 1
             lr f 08
-                puts 01 03je .Lelse03 02
+                wstr 01 03je .Lelse03 02
             09
             f = 01 cmp 02 == 2
             lr f 08
-                puts 01 03jne .Lelse03 02
+                wstr 01 03jne .Lelse03 02
             09
-            puti 01 elno 02
+            wnum 01 elno 02
             putb 01 10 02
             estop = 01 estop 02 ht 1
             elstack[estop] = elno
             dstack[estop] = pdepth
             tstack[estop] = 1
             cmp = 0
+            i = 01 k 02 ht 2
         09
 
         00 ll 循环：k=ll，k+1 记号首字节48('0')，第二字节56('8')→无限循环，49('1')→条件循环
@@ -2676,9 +2681,9 @@ tt main 01 argv 02 08
                     elno = 01 elno 02 ht 1
                     q1 = elno
                     elno = 01 elno 02 ht 1
-                    puts 01 03.Lltop03 02
-                    puti 01 q1 02
-                    puts 01 03:03 02
+                    wstr 01 03.Lltop03 02
+                    wnum 01 q1 02
+                    wstr 01 03:03 02
                     putb 01 10 02
                     estop = 01 estop 02 ht 1
                     elstack[estop] = elno
@@ -2692,9 +2697,9 @@ tt main 01 argv 02 08
                     elno = 01 elno 02 ht 1
                     q1 = elno
                     elno = 01 elno 02 ht 1
-                    puts 01 03.Lwtop03 02
-                    puti 01 q1 02
-                    puts 01 03:03 02
+                    wstr 01 03.Lwtop03 02
+                    wnum 01 q1 02
+                    wstr 01 03:03 02
                     putb 01 10 02
                     00 条件：ll 01 A 02 < 01 B 02 08 → 载荷A/push/载荷B/rcx/cmp/setb/movzx/test/jz
                     n3 = 01 k 02 ht 2
@@ -2709,37 +2714,37 @@ tt main 01 argv 02 08
                     f2 = 01 f2 02 hs 01 t 02
                     lr f2 08
                         putb 01 9 02
-                        puts 01 03test rax, rax03 02
+                        wstr 01 03test rax, rax03 02
                         putb 01 10 02
                     09
                     lr 01 f2 02 == 0 08
                     putb 01 9 02
-                    puts 01 03push rax03 02
+                    wstr 01 03push rax03 02
                     putb 01 10 02
                     n3 = 01 k 02 ht 6
                     pl 01 n3 02
                     putb 01 9 02
-                    puts 01 03mov rcx, rax03 02
+                    wstr 01 03mov rcx, rax03 02
                     putb 01 10 02
                     putb 01 9 02
-                    puts 01 03pop rax03 02
+                    wstr 01 03pop rax03 02
                     putb 01 10 02
                     putb 01 9 02
-                    puts 01 03cmp rax, rcx03 02
+                    wstr 01 03cmp rax, rcx03 02
                     putb 01 10 02
                     putb 01 9 02
-                    puts 01 03setb al03 02
+                    wstr 01 03setb al03 02
                     putb 01 10 02
                     putb 01 9 02
-                    puts 01 03movzx rax, al03 02
+                    wstr 01 03movzx rax, al03 02
                     putb 01 10 02
                     putb 01 9 02
-                    puts 01 03test rax, rax03 02
+                    wstr 01 03test rax, rax03 02
                     putb 01 10 02
                     09
                     putb 01 9 02
-                    puts 01 03jz .Lwend03 02
-                    puti 01 elno 02
+                    wstr 01 03jz .Lwend03 02
+                    wnum 01 elno 02
                     putb 01 10 02
                     estop = 01 estop 02 ht 1
                     elstack[estop] = elno
@@ -2777,7 +2782,7 @@ tt main 01 argv 02 08
                 q1 = str2num 01 q1 02
                 q1 = 01 q1 02 hh 8
                 regglob 01 n2 , q1 02
-                i = 01 k 02 ht 3
+                i = 01 k 02 ht 4
             09
         09
 
@@ -2808,7 +2813,7 @@ tt main 01 argv 02 08
                         n2 = 01 k 02 ht 5
                         pl 01 n2 02
                         putb 01 9 02
-                        puts 01 03push rax03 02
+                        wstr 01 03push rax03 02
                         putb 01 10 02
                         n2 = 01 k 02 ht 7
                         pl 01 n2 02
@@ -2829,12 +2834,12 @@ tt main 01 argv 02 08
                     09
                     lr q2 08
                         putb 01 9 02
-                        puts 01 03mov rax, offset g_03 02
+                        wstr 01 03mov rax, offset g_03 02
                         n3 = 01 k 02 ht 4
                         mgl 01 n3 02
                         putb 01 10 02
                         putb 01 9 02
-                        puts 01 03mov rax, [rax]03 02
+                        wstr 01 03mov rax, [rax]03 02
                         putb 01 10 02
                     09
                     t = 01 t 02 hr 01 q2 02
@@ -2842,34 +2847,34 @@ tt main 01 argv 02 08
                         f2 = argmark[idx]
                         lr f2 08
                             putb 01 9 02
-                            puts 01 03lea rax, [rbp+03 02
-                            puti 01 q1 02
-                            puts 01 03]03 02
+                            wstr 01 03lea rax, [rbp+03 02
+                            wnum 01 q1 02
+                            wstr 01 03]03 02
                             putb 01 10 02
                         09
                         t = 01 f2 02 == 0
                         lr t 08
                             putb 01 9 02
-                            puts 01 03lea rax, [rbp-03 02
-                            puti 01 q1 02
-                            puts 01 03]03 02
+                            wstr 01 03lea rax, [rbp-03 02
+                            wnum 01 q1 02
+                            wstr 01 03]03 02
                             putb 01 10 02
                         09
                         putb 01 9 02
-                        puts 01 03mov rax, [rax]03 02
+                        wstr 01 03mov rax, [rax]03 02
                         putb 01 10 02
                     09
                     09
                     00 fh 核心：再解引用一次
                     putb 01 9 02
-                    puts 01 03mov rax, [rax]03 02
+                    wstr 01 03mov rax, [rax]03 02
                     putb 01 10 02
                     00 存回目标
                     n2 = lookup 01 k 02
                     putb 01 9 02
-                    puts 01 03mov [rbp-03 02
-                    puti 01 n2 02
-                    puts 01 03], rax03 02
+                    wstr 01 03mov [rbp-03 02
+                    wnum 01 n2 02
+                    wstr 01 03], rax03 02
                     putb 01 10 02
                     i = 01 i 02 ht 5
                 09
@@ -2903,6 +2908,14 @@ tt main 01 argv 02 08
             lr f 08 bname = 3 09
             f = tokis 01 k , 03puti03 02
             lr f 08 bname = 4 09
+            f = tokis 01 k , 03rdfile03 02
+            lr f 08 bname = 5 09
+            f = tokis 01 k , 03rdbuf03 02
+            lr f 08 bname = 6 09
+            f = tokis 01 k , 03fsize03 02
+            lr f 08 bname = 7 09
+            f = tokis 01 k , 03wrfile03 02
+            lr f 08 bname = 8 09
             n3 = 01 k 02
             c = head 01 n3 02
             c = 01 c 02 hs 255
@@ -2969,12 +2982,12 @@ tt main 01 argv 02 08
                                     09
                                     pl 01 q2 02
                                     putb 01 9 02
-                                    puts 01 03push rax03 02
+                                    wstr 01 03push rax03 02
                                     putb 01 10 02
                                     pl 01 n3 02
                                     twoop 01 f 02
                                     putb 01 9 02
-                                    puts 01 03push rax03 02
+                                    wstr 01 03push rax03 02
                                     putb 01 10 02
                                     n = 01 n 02 ht 1
                                     argdone = 1
@@ -2994,11 +3007,11 @@ tt main 01 argv 02 08
                                     lr q2 08
                                         n2 = regstr 01 q1 02
                                         putb 01 9 02
-                                        puts 01 03mov rax, offset .Lstr03 02
-                                        puti 01 n2 02
+                                        wstr 01 03mov rax, offset .Lstr03 02
+                                        wnum 01 n2 02
                                         putb 01 10 02
                                         putb 01 9 02
-                                        puts 01 03push rax03 02
+                                        wstr 01 03push rax03 02
                                         putb 01 10 02
                                         n = 01 n 02 ht 1
                                         argdone = 1
@@ -3016,11 +3029,11 @@ tt main 01 argv 02 08
                             t = 01 q2 02 == 1
                             lr t 08
                                 putb 01 9 02
-                                puts 01 03mov rax, 03 02
+                                wstr 01 03mov rax, 03 02
                                 puttok 01 q1 02
                                 putb 01 10 02
                                 putb 01 9 02
-                                puts 01 03push rax03 02
+                                wstr 01 03push rax03 02
                                 putb 01 10 02
                                 n = 01 n 02 ht 1
                             09
@@ -3035,24 +3048,24 @@ tt main 01 argv 02 08
                                     f = argmark[idx]
                                     lr f 08
                                         putb 01 9 02
-                                        puts 01 03lea rax, [rbp+03 02
-                                        puti 01 n2 02
-                                        puts 01 03]03 02
+                                        wstr 01 03lea rax, [rbp+03 02
+                                        wnum 01 n2 02
+                                        wstr 01 03]03 02
                                         putb 01 10 02
                                     09
                                     t = 01 f 02 == 0
                                     lr t 08
                                         putb 01 9 02
-                                        puts 01 03lea rax, [rbp-03 02
-                                        puti 01 n2 02
-                                        puts 01 03]03 02
+                                        wstr 01 03lea rax, [rbp-03 02
+                                        wnum 01 n2 02
+                                        wstr 01 03]03 02
                                         putb 01 10 02
                                     09
                                     putb 01 9 02
-                                    puts 01 03mov rax, [rax]03 02
+                                    wstr 01 03mov rax, [rax]03 02
                                     putb 01 10 02
                                     putb 01 9 02
-                                    puts 01 03push rax03 02
+                                    wstr 01 03push rax03 02
                                     putb 01 10 02
                                     n = 01 n 02 ht 1
                                 09
@@ -3063,33 +3076,49 @@ tt main 01 argv 02 08
                         putb 01 9 02
                         f = 01 bname 02 == 0
                         lr f 08
-                            puts 01 03call fn_03 02
+                            wstr 01 03call fn_03 02
                             n2 = 01 k 02
                             mgl 01 n2 02
                         09
                         f = 01 bname 02 == 1
                         lr f 08
-                            puts 01 03call _rt_sb03 02
+                            wstr 01 03call _rt_sb03 02
                         09
                         f = 01 bname 02 == 2
                         lr f 08
-                            puts 01 03call _rt_putc03 02
+                            wstr 01 03call _rt_putc03 02
                         09
                         f = 01 bname 02 == 3
                         lr f 08
-                            puts 01 03call _rt_puts03 02
+                            wstr 01 03call _rt_puts03 02
                         09
                         f = 01 bname 02 == 4
                         lr f 08
-                            puts 01 03call _rt_puti03 02
+                            wstr 01 03call _rt_puti03 02
+                        09
+                        f = 01 bname 02 == 5
+                        lr f 08
+                            wstr 01 03call _rt_readfile03 02
+                        09
+                        f = 01 bname 02 == 6
+                        lr f 08
+                            wstr 01 03call _rt_readbuf03 02
+                        09
+                        f = 01 bname 02 == 7
+                        lr f 08
+                            wstr 01 03call _rt_fsize03 02
+                        09
+                        f = 01 bname 02 == 8
+                        lr f 08
+                            wstr 01 03call fn_write_file03 02
                         09
                         putb 01 10 02
                         t = 01 n 02 > 0
                         lr t 08
                             putb 01 9 02
-                            puts 01 03add rsp, 03 02
+                            wstr 01 03add rsp, 03 02
                             q1 = 01 n 02 hh 8
-                            puti 01 q1 02
+                            wnum 01 q1 02
                             putb 01 10 02
                         09
                         00 调用结果存回：若 k-1 是 = 且 k-2 是局部槽，补 mov [rbp-slot],rax
@@ -3103,9 +3132,9 @@ tt main 01 argv 02 08
                             t = 01 t 02 hs 01 q2 02
                             lr t 08
                                 putb 01 9 02
-                                puts 01 03mov [rbp-03 02
-                                puti 01 q1 02
-                                puts 01 03], rax03 02
+                                wstr 01 03mov [rbp-03 02
+                                wnum 01 q1 02
+                                wstr 01 03], rax03 02
                                 putb 01 10 02
                             09
                         09
@@ -3132,35 +3161,35 @@ tt main 01 argv 02 08
         i = 01 i 02 ht 1
     09
     00 收尾：补最后一个函数的尾声
-    puts 01 03.Lret_03 02
+    wstr 01 03.Lret_03 02
     n3 = 01 r 02
     mgl 01 n3 02
-    puts 01 03:03 02
+    wstr 01 03:03 02
     putb 01 10 02
     putb 01 9 02
-    puts 01 03mov rsp, rbp03 02
+    wstr 01 03mov rsp, rbp03 02
     putb 01 10 02
     putb 01 9 02
-    puts 01 03pop rbp03 02
+    wstr 01 03pop rbp03 02
     putb 01 10 02
     putb 01 9 02
-    puts 01 03ret03 02
+    wstr 01 03ret03 02
     putb 01 10 02
 
     00 ── dd 字符串表：输出 .section .rodata ──
     lr nstr 08
         putb 01 10 02
         putb 01 9 02
-        puts 01 03.section .rodata03 02
+        wstr 01 03.section .rodata03 02
         putb 01 10 02
         i = 0
         ll 01 i 02 < 01 nstr 02 08
-            puts 01 03.Lstr03 02
-            puti 01 i 02
-            puts 01 03:03 02
+            wstr 01 03.Lstr03 02
+            wnum 01 i 02
+            wstr 01 03:03 02
             putb 01 10 02
             putb 01 9 02
-            puts 01 03.asciz 03 02
+            wstr 01 03.asciz 03 02
             putb 01 34 02
             n2 = strpos[ i ]
             n3 = slen[ i ]
@@ -3176,7 +3205,7 @@ tt main 01 argv 02 08
             i = 01 i 02 ht 1
         09
         putb 01 9 02
-        puts 01 03.section .text03 02
+        wstr 01 03.section .text03 02
         putb 01 10 02
     09
 
@@ -3184,10 +3213,10 @@ tt main 01 argv 02 08
     lr nglob 08
         putb 01 10 02
         putb 01 9 02
-        puts 01 03.section .bss03 02
+        wstr 01 03.section .bss03 02
         putb 01 10 02
         putb 01 9 02
-        puts 01 03.align 403 02
+        wstr 01 03.align 403 02
         putb 01 10 02
         i = 0
         ll 01 i 02 < 01 nglob 02 08
@@ -3195,54 +3224,54 @@ tt main 01 argv 02 08
             q2 = 01 f 02 == 0
             lr q2 08
                 putb 01 9 02
-                puts 01 03.comm g_03 02
+                wstr 01 03.comm g_03 02
                 n2 = gpos[ i ]
                 mgl 01 n2 02
-                puts 01 03, 03 02
+                wstr 01 03, 03 02
                 q1 = gsize[ i ]
-                puti 01 q1 02
-                puts 01 03, 403 02
+                wnum 01 q1 02
+                wstr 01 03, 403 02
                 putb 01 10 02
             09
             i = 01 i 02 ht 1
         09
         putb 01 10 02
         putb 01 9 02
-        puts 01 03.section .data03 02
+        wstr 01 03.section .data03 02
         putb 01 10 02
         putb 01 9 02
-        puts 01 03.align 803 02
+        wstr 01 03.align 803 02
         putb 01 10 02
         i = 0
         ll 01 i 02 < 01 nglob 02 08
             f = ginit[ i ]
             lr f 08
-                puts 01 03g_03 02
+                wstr 01 03g_03 02
                 n2 = gpos[ i ]
                 mgl 01 n2 02
-                puts 01 03:03 02
+                wstr 01 03:03 02
                 putb 01 10 02
                 putb 01 9 02
-                puts 01 03.quad 03 02
+                wstr 01 03.quad 03 02
                 q1 = ginit[ i ]
-                puti 01 q1 02
+                wnum 01 q1 02
                 putb 01 10 02
             09
             i = 01 i 02 ht 1
         09
     09
 
-    puts 01 03诊断:len=03 02
-    puti 01 len 02
-    puts 01 03 cnt=03 02
-    puti 01 cnt 02
-    puts 01 03 求值测=03 02
+    wstr 01 03诊断:len=03 02
+    wnum 01 len 02
+    wstr 01 03 cnt=03 02
+    wnum 01 cnt 02
+    wstr 01 03 求值测=03 02
     q1 = 01 8 02
     q2 = eval 01 q1 02
-    puti 01 q2 02
+    wnum 01 q2 02
     putb 01 10 02
-    puts 01 03 olen=03 02
-    puti 01 olen 02
+    wstr 01 03 olen=03 02
+    wnum 01 olen 02
     putc 01 10 02
     wrfile 01 03新清单999.txt03 , outbuf , olen 02
     zz 0
