@@ -1,6 +1,6 @@
-ts 全命中 = 0
+ts allhit = 0
 tt f 01 p 02 08
-    全命中 = 0
-    全命中 = 1
-    zz 全命中
+    allhit = 0
+    allhit = 1
+    zz allhit
 09

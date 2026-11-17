@@ -1,10 +1,12 @@
+tf argmark[16]
+ts nname = 3
 tt f 01 p 02 08
     tz q = 0
-    q = 参标[0]
-    写数 01 q 02
-    写字节 01 10 02
-    写数 01 名数 02
-    写字节 01 10 02
-    q = 参标[f]
+    q = argmark[0]
+    puti 01 q 02
+    putc 01 10 02
+    puti 01 nname 02
+    putc 01 10 02
+    q = argmark[p]
     zz q
 09

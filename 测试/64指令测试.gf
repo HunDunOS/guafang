@@ -4,7 +4,7 @@
 ts g_test = 0
 tf g_arr[8]: u64
 th g_const = 100
-tr g_enum 08 甲 乙 09
+tr g_enum 08 A B 09
 tl g_struct 08
     a: u64
     b: u64

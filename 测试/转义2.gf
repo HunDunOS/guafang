@@ -1,8 +1,8 @@
 tt zhu 01 02 -> u64 08
     st dd "say: "
-    写字节 01 34 02
+    putc 01 34 02
     st dd "hello"
-    写字节 01 34 02
+    putc 01 34 02
     st dd " "
     zz 0
 09

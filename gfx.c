@@ -206,6 +206,18 @@ static char *还原数字标点(const char *src) {
             while (is_idc((unsigned char)*q) || (*q >= '0' && *q <= '9')) q++;
             int n = (int)(q - p);
             char *w = xmalloc(n + 1); memcpy(w, p, n); w[n] = 0;
+            /* ★★ 卦方铁律：命令与名字不许含中文 / 非 ASCII ★★
+               中文只许出现在三处：00 注释、03 字符串、文件名。
+               后端要把名字变成 fn_xxx / g_xxx 符号，非 ASCII 字节要么被 mangle 拉长到
+               撞 900 字节上限，要么直接漏进汇编（fn_求值 这种），自举时 gfx2 != gfx3。 */
+            for (const unsigned char *wq = (const unsigned char *)w; *wq; wq++) {
+                if (*wq >= 0x80) {
+                    int 行 = srcline;
+                    die("第 %d 行：名字『%s』里有中文/非 ASCII 字符\n"
+                        "        卦方铁律：命令和名字只能用 a-z A-Z 0-9 _\n"
+                        "        中文只许写在 00 注释、03 字符串和文件名里", 行, w);
+                }
+            }
             int k = TK_ID;
             if (in_list(KEYWORDS, w) || in_list(OPKW, w)) k = TK_KW;
             else if (in_list(TYPES, w)) k = TK_TY;
@@ -504,62 +516,62 @@ static int lvalue_full(const char *name, int *width, int *had, int ln) {
 
 /* ---- 图形/输入内建：名字 → 运行时符号 + 参数个数（实现在 图形.asm）---- */
 static const struct { const char *name; const char *sym; int nargs; } GFX_BUILTINS[] = {
-    {"屏宽",   "_gfx_getw",      0},
-    {"屏高",   "_gfx_geth",      0},
-    {"帧址",   "_gfx_getfb",     0},
-    {"行宽",   "_gfx_getpitch",  0},
-    {"内存",   "_gfx_getmem",    0},
-    {"毫秒",   "_gfx_ms",        0},
-    {"键",     "_gfx_key",       0},
-    {"鼠x",    "_gfx_msx",       0},
-    {"鼠y",    "_gfx_msy",       0},
-    {"鼠钮",   "_gfx_msbtn",     0},
-    {"轮询",   "_gfx_poll",      0},
-    {"时",     "_gfx_hour",      0},
-    {"分",     "_gfx_min",       0},
-    {"秒",     "_gfx_sec",       0},
-    {"睡",     "_gfx_sleep",     1},
-    {"绘点",   "_gfx_px",        3},
-    {"取点",   "_gfx_getpx",     2},
-    {"绘块",   "_gfx_fill",      5},
-    {"绘框",   "_gfx_frame",     5},
-    {"绘字",   "_gfx_text",      4},
-    {"绘数",   "_gfx_num",       4},
-    {"绘十六", "_gfx_hex",       4},
-    {"绘块混", "_gfx_fillblend", 6},
-    {"滚屏",   "_gfx_scrollup",   2},
-    {"滚块",   "_gfx_scrollrect", 6},
+    {"scw",   "_gfx_getw",      0},
+    {"sch",   "_gfx_geth",      0},
+    {"fbad",   "_gfx_getfb",     0},
+    {"pitch",   "_gfx_getpitch",  0},
+    {"mem",   "_gfx_getmem",    0},
+    {"ms",   "_gfx_ms",        0},
+    {"key",     "_gfx_key",       0},
+    {"msx",    "_gfx_msx",       0},
+    {"msy",    "_gfx_msy",       0},
+    {"msb",   "_gfx_msbtn",     0},
+    {"poll",   "_gfx_poll",      0},
+    {"hr",     "_gfx_hour",      0},
+    {"mi",     "_gfx_min",       0},
+    {"se",     "_gfx_sec",       0},
+    {"sleep",     "_gfx_sleep",     1},
+    {"px",   "_gfx_px",        3},
+    {"getpx",   "_gfx_getpx",     2},
+    {"fill",   "_gfx_fill",      5},
+    {"frame",   "_gfx_frame",     5},
+    {"text",   "_gfx_text",      4},
+    {"dnum",   "_gfx_num",       4},
+    {"dhex", "_gfx_hex",       4},
+    {"fillb", "_gfx_fillblend", 6},
+    {"sup",   "_gfx_scrollup",   2},
+    {"srect",   "_gfx_scrollrect", 6},
     /* ---- 机器原语（原语.asm）---- */
-    {"端入",   "_pr_in8",        1},
-    {"端入字", "_pr_in16",       1},
-    {"端出",   "_pr_out8",       2},
-    {"端出字", "_pr_out16",      2},
-    {"读32",   "_pr_ld32",       1},
-    {"写32",   "_pr_st32",       2},
-    {"读8",    "_pr_ld8",        1},
-    {"写8",    "_pr_st8",        2},
-    {"停机",   "_pr_halt",       0},
-    {"调用",   "_pr_call",       5},
-    {"读CPUID","_pr_cpuid",      2},
-    {"CPUE",   "_pr_ca",         0},
-    {"CPUB",   "_pr_cb",         0},
-    {"CPUC",   "_pr_cc",         0},
-    {"CPUD",   "_pr_cd",         0},
-    {"端出32", "_pr_out32",      2},
-    {"端入32", "_pr_in32",       1},
+    {"in8",   "_pr_in8",        1},
+    {"in16", "_pr_in16",       1},
+    {"out8",   "_pr_out8",       2},
+    {"out16", "_pr_out16",      2},
+    {"ld32",   "_pr_ld32",       1},
+    {"st32",   "_pr_st32",       2},
+    {"ld8",    "_pr_ld8",        1},
+    {"st8",    "_pr_st8",        2},
+    {"halt",   "_pr_halt",       0},
+    {"icall",   "_pr_call",       5},
+    {"cpuid","_pr_cpuid",      2},
+    {"ca",   "_pr_ca",         0},
+    {"cb",   "_pr_cb",         0},
+    {"cc",   "_pr_cc",         0},
+    {"cd",   "_pr_cd",         0},
+    {"out32", "_pr_out32",      2},
+    {"in32", "_pr_in32",       1},
     /* ---- 自举运行时（宿主64.s）---- */
-    {"取缓冲", "_rt_readbuf",    0},
-    {"读文件", "_rt_slurp",      2},
-    {"文件长", "_rt_fsize",      1},
-    {"载文件", "_rt_readfile",   1},
-    {"写字节", "_rt_putc",       1},
-    {"写字",   "_rt_sb",         2},
-    {"写串",   "_rt_puts",       1},
-    {"写数",   "_rt_puti",       1},
-    {"写文件", "fn_write_file",  3},
-    {"读缓冲", "_rt_readbuf",    0},
-    {"读文件长","_rt_fsize",     1},
-    {"载入",   "_rt_readfile",   1},
+    {"rdbuf", "_rt_readbuf",    0},
+    {"slurp", "_rt_slurp",      2},
+    {"fsize", "_rt_fsize",      1},
+    {"rdfile", "_rt_readfile",   1},
+    {"putc", "_rt_putc",       1},
+    {"putw",   "_rt_sb",         2},
+    {"puts",   "_rt_puts",       1},
+    {"puti",   "_rt_puti",       1},
+    {"wrfile", "fn_write_file",  3},
+    {"rdbuf", "_rt_readbuf",    0},
+    {"fsize","_rt_fsize",     1},
+    {"rdfile",   "_rt_readfile",   1},
     {NULL, NULL, 0}
 };
 
@@ -746,7 +758,7 @@ static void primary(void) {
         }
 
         /* 内建：键() —— 从 PS/2 键盘读一个键（阻塞） */
-        if (!strcmp(name, "键") && peek(1)->k == TK_P && !strcmp(peek(1)->s, "(")) {
+        if (!strcmp(name, "key") && peek(1)->k == TK_P && !strcmp(peek(1)->s, "(")) {
             adv(); adv(); expect_p(")"); em("call _rt_getkey"); return;
         }
 

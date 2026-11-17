@@ -18,7 +18,7 @@ ts shu1 = 0
 ts shu2 = 0
 ts jieguo = 0
 
-tt 主 01 02 -> u64  08
+tt zhu 01 02 -> u64  08
     shu1 = 12345
     shu2 = 67890
 
@@ -29,9 +29,9 @@ tt 主 01 02 -> u64  08
     mov [g_jieguo], rax
     09
 
-    写串 01 "12345 乘 67890 等于 " 02
-    写数 01 jieguo 02
-    写字节 01 10 02
+    puts 01 "12345 乘 67890 iseq " 02
+    puti 01 jieguo 02
+    putc 01 10 02
 
     zz 0
  09

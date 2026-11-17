@@ -10,37 +10,37 @@
 00    lr ll 条件循环  zt 调用      dd 字符串     dt 整数
 00 ══════════════════════════════════════════════════════
 
-ts 缓冲 = 0
-ts 长 = 0
-ts 记数 = 0
-ts 出长 = 0
-ts 槽 = 0
-ts 名数 = 0
-ts 找索引 = 0
-ts else号 = 0
-ts 括号深 = 0
-ts else栈顶 = 0
+ts buf = 0
+ts len = 0
+ts cnt = 0
+ts olen = 0
+ts slot = 0
+ts nname = 0
+ts idx = 0
+ts elno = 0
+ts pdepth = 0
+ts estop = 0
 
-tf 位表[20000]
-tf 长表[20000]
-tf 出区[524288]
-tf 名位[2000]
-tf 名长[2000]
-tf 槽位[2000]
-tf 参标[2000]
-tf else栈[512]
-tf 深栈[512]
-tf 型栈[512]
-tf 顶栈[512]
+tf bittab[20000]
+tf lentab[20000]
+tf outbuf[524288]
+tf nmpos[2000]
+tf nmlen[2000]
+tf slotpos[2000]
+tf argmark[2000]
+tf elstack[512]
+tf dstack[512]
+tf tstack[512]
+tf topstack[512]
 00 dd 字符串表：串位=内容在缓冲的起点，串长=内容长度（去掉首尾03）
-ts 串数 = 0
-tf 串位[1024]
-tf 串长[1024]
+ts nstr = 0
+tf strpos[1024]
+tf slen[1024]
 00 ts 全局表：全位=名字token索引，全大=size*count
-ts 全局数 = 0
-tf 全位表[256]
-tf 全大表[256]
-tf 全初[256]
+ts nglob = 0
+tf gpos[256]
+tf gsize[256]
+tf ginit[256]
 
 00 ─────────────────────────────────────────
 00  基础
@@ -64,7 +64,7 @@ tt isws 01 c 02 08
 
 tt getb 01 i 02 08
     tz a = 0
-    a = 缓冲 ht i
+    a = buf ht i
     a = fh 01 a 02
     a = 01 a 02 hs 255
     zz a
@@ -76,9 +76,9 @@ tt getb 01 i 02 08
 
 tt putb 01 c 02 08
     tz p = 0
-    p = 出区 ht 出长
-    写字 01 p , c 02
-    出长 = 01 出长 02 ht 1
+    p = outbuf ht olen
+    putw 01 p , c 02
+    olen = 01 olen 02 ht 1
     zz 0
 09
 
@@ -97,9 +97,9 @@ tt eval 01 k 02 08
     tz v = 0
     tz r = 0
     tz q2 = 0
-    tz 槽 = 0
+    tz slot = 0
     tz i = 0
-    tz 数 = 0
+    tz num = 0
 
     00 第一个字节是数字（48~57）就是数字字面量
     c = head 01 k 02
@@ -117,17 +117,17 @@ tt eval 01 k 02 08
                 q1 = 01 p 02 ht i
                 c = bytes 01 k , i 02
                 c = 01 c 02 hz 48
-                数 = 01 数 02 hh 10
-                数 = 01 数 02 ht c
+                num = 01 num 02 hh 10
+                num = 01 num 02 ht c
                 i = 01 i 02 ht 1
             09
-            zz 数
+            zz num
         09
     09
 
     00 不是数字：当变量名，查槽位
-    槽 = lookup 01 k 02
-    t = 01 槽 02 == 0
+    slot = lookup 01 k 02
+    t = 01 slot 02 == 0
     lr t 08
         zz 0
     09
@@ -137,7 +137,7 @@ tt eval 01 k 02 08
     p = fr
     p = 01 p 02 ht 96
     v = fh 01 p 02
-    p = 01 v 02 hz 槽
+    p = 01 v 02 hz slot
     v = fh 01 p 02
     zz v
 09
@@ -147,7 +147,7 @@ tt bytes 01 k , j 02 08
     tz p = 0
     tz q = 0
     p = gettok 01 k 02
-    p = 01 缓冲 02 ht p
+    p = 01 buf 02 ht p
     q = 01 p 02 ht j
     q = fh 01 q 02
     q = 01 q 02 hs 255
@@ -158,7 +158,7 @@ tt bytes 01 k , j 02 08
 tt head 01 k 02 08
     tz p = 0
     p = gettok 01 k 02
-    p = 01 缓冲 02 ht p
+    p = 01 buf 02 ht p
     p = fh 01 p 02
     zz p
 09
@@ -166,14 +166,14 @@ tt head 01 k 02 08
 00 ══════ 槽位表：名字 → rbp 偏移 ══════
 
 00 登记一个名字（k=记号号，槽=rbp偏移）
-tt defname 01 k , 槽 02 08
+tt defname 01 k , slot 02 08
     tz n = 0
-    n = 名数
-    名位[n] = gettok 01 k 02
-    名长[n] = getlen 01 k 02
-    槽位[n] = 槽
-    参标[n] = 0
-    名数 = 01 名数 02 ht 1
+    n = nname
+    nmpos[n] = gettok 01 k 02
+    nmlen[n] = getlen 01 k 02
+    slotpos[n] = slot
+    argmark[n] = 0
+    nname = 01 nname 02 ht 1
     zz 0
 09
 
@@ -187,18 +187,18 @@ tt same 01 k , j 02 08
     tz i = 0
     tz a = 0
     tz b = 0
-    tz 同 = 0
+    tz same = 0
     tz L1 = 0
     p = gettok 01 k 02
-    p = 01 缓冲 02 ht p
-    q = 名位[j]
-    q = 01 缓冲 02 ht q
-    L1 = 名长[j]
-    同 = 0
+    p = 01 buf 02 ht p
+    q = nmpos[j]
+    q = 01 buf 02 ht q
+    L1 = nmlen[j]
+    same = 0
     00 长度必须相等，否则 n3 会被误判成 n（只比首字节）
     q2 = getlen 01 k 02
     lr 01 q2 02 == 01 L1 02 08
-    同 = 1
+    same = 1
     ll 08
         t = 01 i 02 == L1
         lr t 08 ls 09
@@ -208,15 +208,15 @@ tt same 01 k , j 02 08
         q2 = 01 p 02 ht i
         b = fh 01 q2 02
         b = 01 b 02 hs 255
-        lh a b 08 同 = 0 ls 09
+        lh a b 08 same = 0 ls 09
         i = 01 i 02 ht 1
     09
     09
-    zz 同
+    zz same
 09
 
 00 同tok：比较两个 token(k,j) 的内容（都按 token 索引取缓冲位置），用于查全
-tt 同tok 01 k , j 02 08
+tt sametok 01 k , j 02 08
     tz p = 0
     tz q = 0
     tz L1 = 0
@@ -224,13 +224,13 @@ tt 同tok 01 k , j 02 08
     tz a = 0
     tz b = 0
     tz t = 0
-    tz 同 = 0
+    tz same = 0
     L1 = getlen 01 k 02
     p = gettok 01 k 02
     q = gettok 01 j 02
-    p = 01 缓冲 02 ht p
-    q = 01 缓冲 02 ht q
-    同 = 1
+    p = 01 buf 02 ht p
+    q = 01 buf 02 ht q
+    same = 1
     ll 08
         t = 01 i 02 == L1
         lr t 08 ls 09
@@ -238,12 +238,12 @@ tt 同tok 01 k , j 02 08
         a = 01 a 02 hs 255
         b = fh 01 q 02
         b = 01 b 02 hs 255
-        lh a b 08 同 = 0 ls 09
+        lh a b 08 same = 0 ls 09
         p = 01 p 02 ht 1
         q = 01 q 02 ht 1
         i = 01 i 02 ht 1
     09
-    zz 同
+    zz same
 09
 
 00 查名字：返回槽位（正数 8,16,...），找不到返回 0
@@ -256,11 +256,11 @@ tt lookup 01 k 02 08
     tz q2 = 0
     tz f = 0
     r = 0
-    ll 01 j 02 < 01 名数 02 08
+    ll 01 j 02 < 01 nname 02 08
         f = same 01 k , j 02
         lr f 08
-            r = 槽位[j]
-            找索引 = j
+            r = slotpos[j]
+            idx = j
             ls
         09
         j = 01 j 02 ht 1
@@ -271,11 +271,11 @@ tt lookup 01 k 02 08
 00 ── 出数：把数字转成十进制输出（支持 0~999999）──
 tt puti 01 v 02 08
     tz d = 0
-    tz 有 = 0
+    tz has = 0
     tz t = 0
 
 
-    有 = 0
+    has = 0
 
     00 十万位
     t = 01 v 02 >= 100000
@@ -284,42 +284,42 @@ tt puti 01 v 02 08
         d = 01 d 02 ht 48
         putb 01 d 02
         v = 01 v 02 hf 100000
-        有 = 1
+        has = 1
     09
 
     00 万位
     t = 01 v 02 >= 10000
-    lr 01 t hr 有 02 08
+    lr 01 t hr has 02 08
         d = 01 v 02 hl 10000
         d = 01 d 02 ht 48
         putb 01 d 02
         v = 01 v 02 hf 10000
-        有 = 1
+        has = 1
     09
 
     00 千位
     t = 01 v 02 >= 1000
-    lr 01 t hr 有 02 08
+    lr 01 t hr has 02 08
         d = 01 v 02 hl 1000
         d = 01 d 02 ht 48
         putb 01 d 02
         v = 01 v 02 hf 1000
-        有 = 1
+        has = 1
     09
 
     00 百位
     t = 01 v 02 >= 100
-    lr 01 t hr 有 02 08
+    lr 01 t hr has 02 08
         d = 01 v 02 hl 100
         d = 01 d 02 ht 48
         putb 01 d 02
         v = 01 v 02 hf 100
-        有 = 1
+        has = 1
     09
 
     00 十位
     t = 01 v 02 >= 10
-    lr 01 t hr 有 02 08
+    lr 01 t hr has 02 08
         d = 01 v 02 hl 10
         d = 01 d 02 ht 48
         putb 01 d 02
@@ -358,7 +358,7 @@ tt puts 01 s 02 08
 tt gettok 01 k 02 08
     tz t = 0
     t = 01 k 02 hh 8
-    t = 位表 ht t
+    t = bittab ht t
     t = fh 01 t 02
     zz t
 09
@@ -366,7 +366,7 @@ tt gettok 01 k 02 08
 tt getlen 01 k 02 08
     tz t = 0
     t = 01 k 02 hh 8
-    t = 长表 ht t
+    t = lentab ht t
     t = fh 01 t 02
     zz t
 09
@@ -379,10 +379,10 @@ tt tokis 01 k , s 02 08
     tz i = 0
     tz a = 0
     tz b = 0
-    tz 同 = 0
+    tz same = 0
     p = gettok 01 k 02
-    p = 01 缓冲 02 ht p
-    同 = 1
+    p = 01 buf 02 ht p
+    same = 1
     ll 08
         q1 = 01 p 02 ht i
         a = fh 01 q1 02
@@ -392,10 +392,10 @@ tt tokis 01 k , s 02 08
         b = 01 b 02 hs 255
         t = 01 b 02 == 0
         lr t 08 ls 09
-        lh a b 08 同 = 0 ls 09
+        lh a b 08 same = 0 ls 09
         i = 01 i 02 ht 1
     09
-    zz 同
+    zz same
 09
 
 tt puttok 01 k 02 08
@@ -404,7 +404,7 @@ tt puttok 01 k 02 08
     tz c = 0
     tz L = 0
     p = gettok 01 k 02
-    p = 01 缓冲 02 ht p
+    p = 01 buf 02 ht p
     L = getlen 01 k 02
     i = 0
     ll 01 i 02 < 01 L 02 08
@@ -445,21 +445,21 @@ tt hex2 01 v 02 08
 09
 
 00 曼：mangle token k 的名字并输出到出区（g_ 由调用方加）
-tt 曼 01 k 02 08
+tt mgl 01 k 02 08
     tz p = 0
     tz L = 0
     tz i = 0
     tz v = 0
     tz t = 0
     tz f = 0
-    tz 已 = 0
+    tz done = 0
     tz q2 = 0
     p = gettok 01 k 02
-    p = 01 缓冲 02 ht p
+    p = 01 buf 02 ht p
     L = getlen 01 k 02
     i = 0
     ll 01 i 02 < 01 L 02 08
-        已 = 0
+        done = 0
         v = fh 01 01 p ht i 02 02
         v = 01 v 02 hs 255
         t = 01 v 02 >= 97
@@ -467,40 +467,40 @@ tt 曼 01 k 02 08
             f = 01 v 02 <= 122
             lr f 08
                 putb 01 v 02
-                已 = 1
+                done = 1
             09
         09
-        t = 01 已 02 == 0
+        t = 01 done 02 == 0
         lr t 08
             f = 01 v 02 >= 65
             lr f 08
                 q2 = 01 v 02 <= 90
                 lr q2 08
                     putb 01 v 02
-                    已 = 1
+                    done = 1
                 09
             09
         09
-        t = 01 已 02 == 0
+        t = 01 done 02 == 0
         lr t 08
             f = 01 v 02 >= 48
             lr f 08
                 q2 = 01 v 02 <= 57
                 lr q2 08
                     putb 01 v 02
-                    已 = 1
+                    done = 1
                 09
             09
         09
-        t = 01 已 02 == 0
+        t = 01 done 02 == 0
         lr t 08
             f = 01 v 02 == 95
             lr f 08
                 putb 01 v 02
-                已 = 1
+                done = 1
             09
         09
-        t = 01 已 02 == 0
+        t = 01 done 02 == 0
         lr t 08
             putb 01 95 02
             hex2 01 v 02
@@ -511,18 +511,18 @@ tt 曼 01 k 02 08
 09
 00 查全：查全局表，命中返回 索引+1（>0），未命中返回 0
 00   返回 索引+1 而非 索引：索引 0 是合法全局，用 0 表示“没找到”才能判断
-ts 全命中 = 0
-ts 全索引 = 0
-tt 查全 01 k 02 08
+ts allhit = 0
+ts allidx = 0
+tt findall 01 k 02 08
     tz j = 0
     tz f2 = 0
     tz n2 = 0
     tz r = 0
-    ll 01 j 02 < 01 全局数 02 08
-        n2 = 全位表[ j ]
-        f2 = 同tok 01 k , n2 02
+    ll 01 j 02 < 01 nglob 02 08
+        n2 = gpos[ j ]
+        f2 = sametok 01 k , n2 02
         lr f2 08
-            全索引 = j
+            allidx = j
             r = 01 j 02 ht 1
             ls
         09
@@ -532,7 +532,7 @@ tt 查全 01 k 02 08
 09
 
 00 串转数：token k 的十进制文本转数值
-tt 串转数 01 k 02 08
+tt str2num 01 k 02 08
     tz p = 0
     tz L = 0
     tz i = 0
@@ -541,7 +541,7 @@ tt 串转数 01 k 02 08
     tz t = 0
     tz f = 0
     p = gettok 01 k 02
-    p = 01 缓冲 02 ht p
+    p = 01 buf 02 ht p
     L = getlen 01 k 02
     i = 0
     ll 01 i 02 < 01 L 02 08
@@ -562,27 +562,27 @@ tt 串转数 01 k 02 08
 09
 
 00 登全局：登记顶层 ts/tf 声明，k=名字token，sz=size*count
-tt 登全局 01 k , s2 02 08
-    全位表[全局数] = k
-    全大表[全局数] = s2
-    全局数 = 01 全局数 02 ht 1
+tt regglob 01 k , s2 02 08
+    gpos[nglob] = k
+    gsize[nglob] = s2
+    nglob = 01 nglob 02 ht 1
     zz 0
 09
 
 00 登串：把 token k（形如 03内容03）登记进串表，返回串号
-tt 登串 01 k 02 08
+tt regstr 01 k 02 08
     tz p = 0
     tz L = 0
     p = gettok 01 k 02
     L = getlen 01 k 02
-    串位[串数] = 01 缓冲 02 ht 01 p ht 2 02
-    串长[串数] = 01 L 02 hz 4
-    串数 = 01 串数 02 ht 1
-    zz 01 串数 02 hz 1
+    strpos[nstr] = 01 buf 02 ht 01 p ht 2 02
+    slen[nstr] = 01 L 02 hz 4
+    nstr = 01 nstr 02 ht 1
+    zz 01 nstr 02 hz 1
 09
 
 00 是名：这个字节是否可作为标识符首字节（小写/大写/_/中文）
-tt 是名 01 c 02 08
+tt isname 01 c 02 08
     tz t = 0
     tz f = 0
     t = 01 c 02 >= 97
@@ -601,7 +601,7 @@ tt 是名 01 c 02 08
 09
 
 00 载荷：把一个记号当值载入 rax（数字 / 局部 / 参数 / 全局标量）
-tt 载荷 01 n3 02 08
+tt pl 01 n3 02 08
     tz c = 0
     tz t = 0
     tz q1 = 0
@@ -623,7 +623,7 @@ tt 载荷 01 n3 02 08
     f = 01 q1 02 <= 512
     t = 01 t 02 hs 01 f 02
     lr t 08
-        f = 参标[找索引]
+        f = argmark[idx]
         lr f 08
             putb 01 9 02
             puts 01 03lea rax, [rbp+03 02
@@ -646,7 +646,7 @@ tt 载荷 01 n3 02 08
     09
     putb 01 9 02
     puts 01 03mov rax, offset g_03 02
-    曼 01 n3 02
+    mgl 01 n3 02
     putb 01 10 02
     putb 01 9 02
     puts 01 03mov rax, [rax]03 02
@@ -657,7 +657,7 @@ tt 载荷 01 n3 02 08
 00 二元运算：约定 rax=右值、栈顶=左值；按 op token 输出指令，结果留在 rax
 00   op 首字节 61('=') → cmp+sete；60/62/33 → cmp+setb/setbe/seta/setae/setne
 00   op 首字节 104('h') → ht/hz/hh/hl/hf/hs/hr/hd 算术与位运算
-tt 二op 01 op 02 08
+tt twoop 01 op 02 08
     tz c = 0
     tz q2 = 0
     tz t = 0
@@ -796,18 +796,18 @@ tt 二op 01 op 02 08
 00  主
 00 ─────────────────────────────────────────
 
-tt main 01 参数 02 08
+tt main 01 argv 02 08
     tz c = 0
     tz i = 0
     tz t = 0
     tz f = 0
     tz f2 = 0
-    tz zz已 = 0
-    tz 参已 = 0
-    tz 跳过 = 0
+    tz zzdone = 0
+    tz argdone = 0
+    tz skip = 0
     tz n = 0
-    tz 起 = 0
-    tz 有函 = 0
+    tz start = 0
+    tz hasfn = 0
     tz k = 0
     tz n2 = 0
     tz n3 = 0
@@ -815,29 +815,29 @@ tt main 01 参数 02 08
     tz q1 = 0
     tz q2 = 0
     tz v2 = 0
-    tz 无load = 0
-    tz 内建名 = 0
-    tz 自增已 = 0
+    tz noload = 0
+    tz bname = 0
+    tz incdone = 0
     tz s2 = 0
-    tz 末 = 0
-    tz 参位 = 0
+    tz endp = 0
+    tz apos = 0
     tz fp = 0
-    tz 跳过2 = 0
-    tz 比较 = 0
-    tz 数字左 = 0
-    tz 右括 = 0
+    tz skip2 = 0
+    tz cmp = 0
+    tz numleft = 0
+    tz rp = 0
 
-    t = 载文件 01 参数 02
-    长 = 文件长 01 参数 02
-    缓冲 = 取缓冲 01 02
-    出长 = 0
+    t = rdfile 01 argv 02
+    len = fsize 01 argv 02
+    buf = rdbuf 01 02
+    olen = 0
 
     00 ── 切词 ──
     i = 0
     n = 0
-    ll 01 i 02 < 01 长 02 08
+    ll 01 i 02 < 01 len 02 08
         00 跳空白
-        ll 01 i 02 < 01 长 02 08
+        ll 01 i 02 < 01 len 02 08
             c = getb 01 i 02
             f = isws 01 c 02
             lr f 08 i = 01 i 02 ht 1 09
@@ -845,7 +845,7 @@ tt main 01 参数 02 08
         09
 
         00 到末尾就收工
-        t = 01 i 02 >= 01 长 02
+        t = 01 i 02 >= 01 len 02
         lr t 08 ls 09
 
         00 是 00 开头的注释行吗：第一个字节是 0，第二个是 0
@@ -857,7 +857,7 @@ tt main 01 参数 02 08
             f = 01 c 02 == 48
             lr f 08
                 00 注释：跳到行尾，然后重来
-                ll 01 i 02 < 01 长 02 08
+                ll 01 i 02 < 01 len 02 08
                     c = getb 01 i 02
                     t = 01 c 02 == 10
                     lr t 08 ls 09
@@ -866,12 +866,12 @@ tt main 01 参数 02 08
                 Zn
             09
         09
-        t = 01 i 02 >= 01 长 02
+        t = 01 i 02 >= 01 len 02
         lr t 08 ls 09
 
-        位表[n] = i
-        起 = i
-        ll 01 i 02 < 01 长 02 08
+        bittab[n] = i
+        start = i
+        ll 01 i 02 < 01 len 02 08
             c = getb 01 i 02
             f = isws 01 c 02
             t = 01 f 02 == 1
@@ -881,7 +881,7 @@ tt main 01 参数 02 08
             q2 = 01 c 02 == 93
             f = 01 f 02 hr 01 q2 02
             lr f 08
-                t = 01 i 02 == 01 起 02
+                t = 01 i 02 == 01 start 02
                 lr t 08
                     i = 01 i 02 ht 1
                 09
@@ -889,14 +889,14 @@ tt main 01 参数 02 08
             09
             i = 01 i 02 ht 1
         09
-        长表[n] = 01 i 02 hz 01 起 02
+        lentab[n] = 01 i 02 hz 01 start 02
         n = 01 n 02 ht 1
     09
-    记数 = n
+    cnt = n
 
     puts 01 03MARK20403 02
-    写串 01 03[VERIFY-MARK]03 02
-    写字节 01 10 02
+    puts 01 03[VERIFY-MARK]03 02
+    putc 01 10 02
     putb 01 10 02
 
     00 ══ 生成汇编 ══
@@ -911,10 +911,10 @@ tt main 01 参数 02 08
     putb 01 10 02
 
     i = 0
-    ll 01 i 02 < 01 记数 02 08
+    ll 01 i 02 < 01 cnt 02 08
         k = i
-        自增已 = 0
-        比较 = 0
+        incdone = 0
+        cmp = 0
 
         00 ── 括号深度跟踪 + lr 的 else 标签闭合 ──
         00 记号 09 = 字节 48,57；记号 08 = 字节 48,56
@@ -928,19 +928,19 @@ tt main 01 参数 02 08
                 00 遇 09：若栈顶深度 == 当前深度-1，则这是个 lr 块的收尾
                 f = 01 q1 02 == 57
                 lr f 08
-                    f = 01 else栈顶 02 > 0
+                    f = 01 estop 02 > 0
                     lr f 08
-                        n2 = 01 括号深 02 hz 1
-                        n3 = 深栈[else栈顶]
+                        n2 = 01 pdepth 02 hz 1
+                        n3 = dstack[estop]
                         f = 01 n2 02 hz 01 n3 02
                         f = 01 f 02 == 0
                         lr f 08
-                            n3 = 型栈[else栈顶]
+                            n3 = tstack[estop]
                             00 型1=lr：输出 .LelseN:
                             f = 01 n3 02 == 1
                             lr f 08
                                 puts 01 03.Lelse03 02
-                                n2 = else栈[else栈顶]
+                                n2 = elstack[estop]
                                 puti 01 n2 02
                                 puts 01 03:03 02
                                 putb 01 10 02
@@ -950,11 +950,11 @@ tt main 01 参数 02 08
                             lr f 08
                                 putb 01 9 02
                                 puts 01 03jmp .Lltop03 02
-                                n2 = 顶栈[else栈顶]
+                                n2 = topstack[estop]
                                 puti 01 n2 02
                                 putb 01 10 02
                                 puts 01 03.Llend03 02
-                                n2 = else栈[else栈顶]
+                                n2 = elstack[estop]
                                 puti 01 n2 02
                                 puts 01 03:03 02
                                 putb 01 10 02
@@ -964,24 +964,24 @@ tt main 01 参数 02 08
                             lr f 08
                                 putb 01 9 02
                                 puts 01 03jmp .Lwtop03 02
-                                n2 = 顶栈[else栈顶]
+                                n2 = topstack[estop]
                                 puti 01 n2 02
                                 putb 01 10 02
                                 puts 01 03.Lwend03 02
-                                n2 = else栈[else栈顶]
+                                n2 = elstack[estop]
                                 puti 01 n2 02
                                 puts 01 03:03 02
                                 putb 01 10 02
                             09
-                            else栈顶 = 01 else栈顶 02 hz 1
+                            estop = 01 estop 02 hz 1
                         09
                     09
-                    括号深 = 01 括号深 02 hz 1
+                    pdepth = 01 pdepth 02 hz 1
                 09
                 00 遇 08：深度+1
                 f = 01 q1 02 == 56
                 lr f 08
-                    括号深 = 01 括号深 02 ht 1
+                    pdepth = 01 pdepth 02 ht 1
                 09
             09
         09
@@ -989,12 +989,12 @@ tt main 01 参数 02 08
         00 ls：跳出当前循环 → jmp .LlendN / .LwendN（从栈顶往下找最近循环层）
         f = tokis 01 k , 03ls03 02
         lr f 08
-            s2 = else栈顶
+            s2 = estop
             v2 = 0
             ll 08
                 f = 01 s2 02 <= 0
                 lr f 08 ls 09
-                n2 = 型栈[ s2 ]
+                n2 = tstack[ s2 ]
                 f = 01 n2 02 == 2
                 q1 = 01 n2 02 == 3
                 f = 01 f 02 hr 01 q1 02
@@ -1005,8 +1005,8 @@ tt main 01 参数 02 08
                 s2 = 01 s2 02 hz 1
             09
             lr v2 08
-                n2 = 型栈[ v2 ]
-                q1 = else栈[ v2 ]
+                n2 = tstack[ v2 ]
+                q1 = elstack[ v2 ]
                 f = 01 n2 02 == 2
                 lr f 08
                     putb 01 9 02
@@ -1027,12 +1027,12 @@ tt main 01 参数 02 08
         00 Zn：continue —— 跳回最近循环头（型2 → .Lltop，型3 → .Lwtop）
         f = tokis 01 k , 03Zn03 02
         lr f 08
-            s2 = else栈顶
+            s2 = estop
             v2 = 0
             ll 08
                 f = 01 s2 02 <= 0
                 lr f 08 ls 09
-                n2 = 型栈[ s2 ]
+                n2 = tstack[ s2 ]
                 f = 01 n2 02 == 2
                 q1 = 01 n2 02 == 3
                 f = 01 f 02 hr 01 q1 02
@@ -1043,8 +1043,8 @@ tt main 01 参数 02 08
                 s2 = 01 s2 02 hz 1
             09
             lr v2 08
-                n2 = 型栈[ v2 ]
-                q1 = 顶栈[ v2 ]
+                n2 = tstack[ v2 ]
+                q1 = topstack[ v2 ]
                 f = 01 n2 02 == 2
                 lr f 08
                     putb 01 9 02
@@ -1066,10 +1066,10 @@ tt main 01 参数 02 08
         f = tokis 01 k , 03tt03 02
         lr f 08
             00 第二个函数起，先补上一个函数的尾声（有函=已见函数数，非0则补）
-            lr 有函 08
+            lr hasfn 08
                 puts 01 03.Lret_03 02
                 n3 = 01 r 02
-                曼 01 n3 02
+                mgl 01 n3 02
                 puts 01 03:03 02
                 putb 01 10 02
                 putb 01 9 02
@@ -1084,14 +1084,14 @@ tt main 01 参数 02 08
                 putb 01 10 02
             09
             r = 01 k 02 ht 1
-            有函 = 01 有函 02 ht 1
+            hasfn = 01 hasfn 02 ht 1
             putb 01 9 02
             puts 01 03.globl fn_03 02
             n3 = 01 k 02 ht 1
-            曼 01 n3 02
+            mgl 01 n3 02
             putb 01 10 02
             puts 01 03fn_03 02
-            曼 01 n3 02
+            mgl 01 n3 02
             puts 01 03:03 02
             putb 01 10 02
             putb 01 9 02
@@ -1103,7 +1103,7 @@ tt main 01 参数 02 08
             00 预扫描本函数 tz 数量 → 16 对齐帧大小
             n2 = 01 k 02 ht 1
             q1 = 0
-            ll 01 n2 02 < 01 记数 02 08
+            ll 01 n2 02 < 01 cnt 02 08
                 t = tokis 01 n2 , 03tt03 02
                 lr t 08 ls 09
                 t = tokis 01 n2 , 03tz03 02
@@ -1125,12 +1125,12 @@ tt main 01 参数 02 08
             puts 01 03mov rax, 003 02
             putb 01 10 02
             00 函数开始重置局部名字表（C版 nvars=0），在登记参数之前
-            名数 = 0
-            槽 = 0
+            nname = 0
+            slot = 0
             00 登记参数：扫描 01 名1 , 名2 02，槽=16+8*(np-1-j)（正数），参标=1
             n3 = 01 k 02 ht 2
             q1 = 0
-            ll 01 n3 02 < 01 记数 02 08
+            ll 01 n3 02 < 01 cnt 02 08
                 c = head 01 n3 02
                 c = 01 c 02 hs 255
                 t = 01 c 02 == 48
@@ -1139,7 +1139,7 @@ tt main 01 参数 02 08
                     t = 01 c 02 == 50
                     lr t 08 ls 09
                 09
-                t = 是名 01 c 02
+                t = isname 01 c 02
                 lr t 08
                     q1 = 01 q1 02 ht 1
                 09
@@ -1147,7 +1147,7 @@ tt main 01 参数 02 08
             09
             n3 = 01 k 02 ht 2
             q2 = 0
-            ll 01 n3 02 < 01 记数 02 08
+            ll 01 n3 02 < 01 cnt 02 08
                 c = head 01 n3 02
                 c = 01 c 02 hs 255
                 t = 01 c 02 == 48
@@ -1156,15 +1156,15 @@ tt main 01 参数 02 08
                     t = 01 c 02 == 50
                     lr t 08 ls 09
                 09
-                t = 是名 01 c 02
+                t = isname 01 c 02
                 lr t 08
                     n = 01 q1 02 hz 01 q2 02
                     n = 01 n 02 hz 1
                     n = 01 n 02 hh 8
                     n = 01 n 02 ht 16
                     defname 01 n3 , n 02
-                    f = 01 名数 02 hz 1
-                    参标[f] = 1
+                    f = 01 nname 02 hz 1
+                    argmark[f] = 1
                     q2 = 01 q2 02 ht 1
                 09
                 n3 = 01 n3 02 ht 1
@@ -1175,9 +1175,9 @@ tt main 01 参数 02 08
         00 tz 名字 = 数字   四个记号：tz / 名字 / = / 数字
         f = tokis 01 k , 03tz03 02
         lr f 08
-            槽 = 01 槽 02 ht 8
+            slot = 01 slot 02 ht 8
             n3 = 01 k 02 ht 1
-            defname 01 n3 , 槽 02
+            defname 01 n3 , slot 02
             putb 01 9 02
             puts 01 03mov rax, 03 02
             n3 = 01 k 02 ht 3
@@ -1185,7 +1185,7 @@ tt main 01 参数 02 08
             putb 01 10 02
             putb 01 9 02
             puts 01 03mov [rbp-03 02
-            puti 01 槽 02
+            puti 01 slot 02
             puts 01 03], rax03 02
             putb 01 10 02
             i = 01 i 02 ht 3
@@ -1212,7 +1212,7 @@ tt main 01 参数 02 08
                     puts 01 03], rax03 02
                     putb 01 10 02
                     i = 01 i 02 ht 2
-                    自增已 = 1
+                    incdone = 1
                 09
             09
         09
@@ -1221,7 +1221,7 @@ tt main 01 参数 02 08
         00 判据：k+1是=，k+2是标识符，k+3 不是运算符/括号/编码
         n3 = 01 k 02 ht 1
         f = tokis 01 n3 , 03=03 02
-        q1 = 01 自增已 02 == 0
+        q1 = 01 incdone 02 == 0
         f = 01 f 02 hs 01 q1 02
         lr f 08
             n3 = 01 k 02 ht 3
@@ -1229,7 +1229,7 @@ tt main 01 参数 02 08
             fp = getlen 01 n3 02
             c = head 01 n3 02
             c = 01 c 02 hs 255
-            跳过2 = 0
+            skip2 = 0
             f = 01 fp 02 == 2
             lr f 08
                 q1 = 01 c 02 == 104
@@ -1237,33 +1237,33 @@ tt main 01 参数 02 08
                 q1 = 01 q1 02 hr 01 q2 02
                 q2 = 01 c 02 == 48
                 q1 = 01 q1 02 hr 01 q2 02
-                跳过2 = 01 q1 02
+                skip2 = 01 q1 02
             09
             q1 = 01 c 02 == 91
-            跳过2 = 01 跳过2 02 hr 01 q1 02
+            skip2 = 01 skip2 02 hr 01 q1 02
             q1 = 01 c 02 == 93
-            跳过2 = 01 跳过2 02 hr 01 q1 02
+            skip2 = 01 skip2 02 hr 01 q1 02
             q1 = 01 c 02 == 60
-            跳过2 = 01 跳过2 02 hr 01 q1 02
+            skip2 = 01 skip2 02 hr 01 q1 02
             q1 = 01 c 02 == 62
-            跳过2 = 01 跳过2 02 hr 01 q1 02
+            skip2 = 01 skip2 02 hr 01 q1 02
             q1 = 01 c 02 == 33
-            跳过2 = 01 跳过2 02 hr 01 q1 02
+            skip2 = 01 skip2 02 hr 01 q1 02
             q1 = 01 c 02 == 61
-            跳过2 = 01 跳过2 02 hr 01 q1 02
-            f = 01 跳过2 02 == 0
+            skip2 = 01 skip2 02 hr 01 q1 02
+            f = 01 skip2 02 == 0
             lr f 08
                 n3 = 01 k 02 ht 2
                 c = head 01 n3 02
                 c = 01 c 02 hs 255
-                t = 是名 01 c 02
+                t = isname 01 c 02
                 lr t 08
                     n2 = lookup 01 k 02
-                    q2 = 参标[ 找索引 ]
+                    q2 = argmark[ idx ]
                     f = 01 n2 02 >= 8
                     q1 = 01 n2 02 <= 512
                     f = 01 f 02 hs 01 q1 02
-                    载荷 01 n3 02
+                    pl 01 n3 02
                     lr f 08
                         lr q2 08
                             putb 01 9 02
@@ -1289,7 +1289,7 @@ tt main 01 参数 02 08
                         putb 01 9 02
                         puts 01 03mov rax, offset g_03 02
                         n3 = 01 k 02
-                        曼 01 n3 02
+                        mgl 01 n3 02
                         putb 01 10 02
                         putb 01 9 02
                         puts 01 03pop rcx03 02
@@ -1299,7 +1299,7 @@ tt main 01 参数 02 08
                         putb 01 10 02
                     09
                     i = 01 i 02 ht 2
-                    自增已 = 1
+                    incdone = 1
                 09
             09
         09
@@ -1370,13 +1370,13 @@ tt main 01 参数 02 08
                 lr t 08
                     00 右值先求（载荷 直接产出 mov rax），左值 push 后再 二op
                     n3 = 01 k 02 ht 2
-                    载荷 01 n3 02
+                    pl 01 n3 02
                     putb 01 9 02
                     puts 01 03push rax03 02
                     putb 01 10 02
                     00 右值 k+4；若是 01 X 02 则取 k+5，i 多进 2
                     n3 = 01 k 02 ht 4
-                    右括 = 0
+                    rp = 0
                     c = head 01 n3 02
                     c = 01 c 02 hs 255
                     f2 = 01 c 02 == 48
@@ -1393,17 +1393,17 @@ tt main 01 参数 02 08
                                 f = 01 q2 02 == 50
                                 lr f 08
                                     n3 = 01 k 02 ht 5
-                                    右括 = 2
+                                    rp = 2
                                 09
                             09
                         09
                     09
-                    载荷 01 n3 02
+                    pl 01 n3 02
                     n3 = 01 k 02 ht 3
-                    二op 01 n3 02
+                    twoop 01 n3 02
                     00 载荷 会改 找索引，这里必须重新 lookup 左值
                     n2 = lookup 01 k 02
-                    f = 参标[找索引]
+                    f = argmark[idx]
                     lr f 08
                         putb 01 9 02
                         puts 01 03mov [rbp+03 02
@@ -1420,8 +1420,8 @@ tt main 01 参数 02 08
                         putb 01 10 02
                     09
                     i = 01 i 02 ht 4
-                    i = i ht 右括
-                    自增已 = 1
+                    i = i ht rp
+                    incdone = 1
                 09
             09
         09
@@ -1445,7 +1445,7 @@ tt main 01 参数 02 08
             q2 = 01 c 02 <= 57
             f = 01 f 02 hs 01 q2 02
             t = 01 t 02 hs 01 f 02
-            q2 = 01 自增已 02 == 0
+            q2 = 01 incdone 02 == 0
             t = 01 t 02 hs 01 q2 02
             lr t 08
                 putb 01 9 02
@@ -1454,7 +1454,7 @@ tt main 01 参数 02 08
                 puttok 01 n3 02
                 putb 01 10 02
                 00 参数(参标=1)存 [rbp+N]，局部(参标=0)存 [rbp-N]
-                f = 参标[找索引]
+                f = argmark[idx]
                 lr f 08
                     putb 01 9 02
                     puts 01 03mov [rbp+03 02
@@ -1479,9 +1479,9 @@ tt main 01 参数 02 08
                 q1 = lookup 01 k 02
                 f = 01 q1 02 == 0
                 lr f 08
-                    t = 查全 01 k 02
+                    t = findall 01 k 02
                     lr t 08
-                        v2 = 全大表[ 全索引 ]
+                        v2 = gsize[ allidx ]
                         t = 01 v2 02 == 8
                         n3 = 01 k 02 ht 2
                         c = head 01 n3 02
@@ -1510,7 +1510,7 @@ tt main 01 参数 02 08
                             putb 01 9 02
                             puts 01 03mov rax, offset g_03 02
                             n3 = 01 k 02
-                            曼 01 n3 02
+                            mgl 01 n3 02
                             putb 01 10 02
                             putb 01 9 02
                             puts 01 03pop rcx03 02
@@ -1519,13 +1519,13 @@ tt main 01 参数 02 08
                             puts 01 03mov [rax], rcx03 02
                             putb 01 10 02
                             i = 01 i 02 ht 2
-                            自增已 = 1
+                            incdone = 1
                         09
                     09
                 09
             09
             00 全局自增/减：全局名 = 01 全局名 op 数字（k..k+6）
-            q1 = 查全 01 k 02
+            q1 = findall 01 k 02
             lr q1 08
                 n3 = 01 k 02 ht 2
                 c = head 01 n3 02
@@ -1540,7 +1540,7 @@ tt main 01 参数 02 08
                         putb 01 9 02
                         puts 01 03mov rax, offset g_03 02
                         n3 = 01 k 02
-                        曼 01 n3 02
+                        mgl 01 n3 02
                         putb 01 10 02
                         putb 01 9 02
                         puts 01 03mov rax, [rax]03 02
@@ -1579,7 +1579,7 @@ tt main 01 参数 02 08
                         putb 01 9 02
                         puts 01 03mov rax, offset g_03 02
                         n3 = 01 k 02
-                        曼 01 n3 02
+                        mgl 01 n3 02
                         putb 01 10 02
                         putb 01 9 02
                         puts 01 03pop rcx03 02
@@ -1588,19 +1588,19 @@ tt main 01 参数 02 08
                         puts 01 03mov [rax], rcx03 02
                         putb 01 10 02
                         i = 01 i 02 ht 6
-                        自增已 = 1
+                        incdone = 1
                     09
                 09
             09
             00 局部守卫失败 → 查全局：mov rax,值 / push / mov rax,offset g_名 / pop rcx / mov [rax],rcx
-            f = 01 自增已 02 == 0
+            f = 01 incdone 02 == 0
             lr f 08
             t = 01 n2 02 >= 8
             f = 01 n2 02 <= 512
             t = 01 t 02 hs 01 f 02
             f = 01 t 02 == 0
             lr f 08
-                q2 = 查全 01 k 02
+                q2 = findall 01 k 02
                 lr q2 08
                     putb 01 9 02
                     puts 01 03mov rax, 03 02
@@ -1613,7 +1613,7 @@ tt main 01 参数 02 08
                     putb 01 9 02
                     puts 01 03mov rax, offset g_03 02
                     n3 = 01 k 02
-                    曼 01 n3 02
+                    mgl 01 n3 02
                     putb 01 10 02
                     putb 01 9 02
                     puts 01 03pop rcx03 02
@@ -1650,7 +1650,7 @@ tt main 01 参数 02 08
                         n3 = 01 k 02 ht 3
                         c = head 01 n3 02
                         c = 01 c 02 hs 255
-                        数字左 = 0
+                        numleft = 0
                         f = 01 c 02 >= 48
                         q2 = 01 c 02 <= 57
                         f = 01 f 02 hs 01 q2 02
@@ -1659,18 +1659,18 @@ tt main 01 参数 02 08
                             puts 01 03mov rax, 03 02
                             puttok 01 n3 02
                             putb 01 10 02
-                            数字左 = 1
+                            numleft = 1
                         09
-                        q2 = 01 数字左 02 == 0
+                        q2 = 01 numleft 02 == 0
                         lr q2 08
                         n2 = lookup 01 n3 02
                         t = 01 n2 02 >= 8
                         q2 = 01 n2 02 <= 512
                         t = 01 t 02 hs 01 q2 02
-                        无load = 0
+                        noload = 0
                         lr t 08
                             00 局部/参数：f=参标判正负
-                            f = 参标[找索引]
+                            f = argmark[idx]
                             lr f 08
                                 putb 01 9 02
                                 puts 01 03lea rax, [rbp+03 02
@@ -1692,17 +1692,17 @@ tt main 01 参数 02 08
                             00 全局：mov rax,offset g_X；标量(全大==8)再 load
                             putb 01 9 02
                             puts 01 03mov rax, offset g_03 02
-                            曼 01 n3 02
+                            mgl 01 n3 02
                             putb 01 10 02
-                            n2 = 查全 01 n3 02
-                            v2 = 全大表[ 全索引 ]
+                            n2 = findall 01 n3 02
+                            v2 = gsize[ allidx ]
                             f = 01 v2 02 == 8
                             q2 = 01 f 02 == 0
                             lr q2 08
-                                无load = 1
+                                noload = 1
                             09
                         09
-                        q2 = 01 无load 02 == 0
+                        q2 = 01 noload 02 == 0
                         lr q2 08
                             putb 01 9 02
                             puts 01 03mov rax, [rax]03 02
@@ -1716,7 +1716,7 @@ tt main 01 参数 02 08
                         n3 = 01 k 02 ht 6
                         c = head 01 n3 02
                         c = 01 c 02 hs 255
-                        右括 = 0
+                        rp = 0
                         f = 01 c 02 == 48
                         lr f 08
                             q2 = bytes 01 n3 , 1 02
@@ -1731,7 +1731,7 @@ tt main 01 参数 02 08
                                     f2 = 01 q2 02 == 50
                                     lr f2 08
                                         n3 = 01 k 02 ht 7
-                                        右括 = 2
+                                        rp = 2
                                     09
                                 09
                             09
@@ -1755,12 +1755,12 @@ tt main 01 参数 02 08
                             t = 01 t 02 hs 01 q2 02
                             q2 = 01 t 02 == 0
                             lr q2 08
-                                q2 = 查全 01 n3 02
+                                q2 = findall 01 n3 02
                             09
                             lr q2 08
                                 putb 01 9 02
                                 puts 01 03mov rax, offset g_03 02
-                                曼 01 n3 02
+                                mgl 01 n3 02
                                 putb 01 10 02
                                 putb 01 9 02
                                 puts 01 03mov rax, [rax]03 02
@@ -1768,7 +1768,7 @@ tt main 01 参数 02 08
                             09
                             t = 01 t 02 hr 01 q2 02
                             lr t 08
-                                f = 参标[找索引]
+                                f = argmark[idx]
                                 lr f 08
                                     putb 01 9 02
                                     puts 01 03lea rax, [rbp+03 02
@@ -1981,7 +1981,7 @@ tt main 01 参数 02 08
                         09
                         00 存回左值 = k：参数用 [rbp+N]，局部用 [rbp-N]
                         n2 = lookup 01 k 02
-                        f = 参标[找索引]
+                        f = argmark[idx]
                         lr f 08
                             putb 01 9 02
                             puts 01 03mov [rbp+03 02
@@ -1998,7 +1998,7 @@ tt main 01 参数 02 08
                             putb 01 10 02
                         09
                         i = 01 i 02 ht 6
-                        i = i ht 右括
+                        i = i ht rp
                     09
                 09
             09
@@ -2010,7 +2010,7 @@ tt main 01 参数 02 08
         00 注意：通用裸二元块已覆盖本形态，靠 自增已 闸门避免重复触发
         n3 = 01 k 02 ht 1
         f = tokis 01 n3 , 03=03 02
-        q2 = 01 自增已 02 == 0
+        q2 = 01 incdone 02 == 0
         f = 01 f 02 hs 01 q2 02
         lr f 08
             n2 = lookup 01 k 02
@@ -2019,7 +2019,7 @@ tt main 01 参数 02 08
             f = 01 f 02 hs 01 q1 02
             lr f 08
                 n3 = 01 k 02 ht 2
-                q2 = 查全 01 n3 02
+                q2 = findall 01 n3 02
                 lr q2 08
                     n3 = 01 k 02 ht 3
                     t = tokis 01 n3 , 03ht03 02
@@ -2028,9 +2028,9 @@ tt main 01 参数 02 08
                         putb 01 9 02
                         puts 01 03mov rax, offset g_03 02
                         n3 = 01 k 02 ht 2
-                        曼 01 n3 02
+                        mgl 01 n3 02
                         putb 01 10 02
-                        q2 = 全大表[ 全索引 ]
+                        q2 = gsize[ allidx ]
                         f = 01 q2 02 == 8
                         lr f 08
                             putb 01 9 02
@@ -2048,13 +2048,13 @@ tt main 01 参数 02 08
                         t = 01 t 02 hs 01 q2 02
                         q2 = 01 t 02 == 0
                         lr q2 08
-                            q2 = 查全 01 n3 02
+                            q2 = findall 01 n3 02
                         09
                         lr q2 08
                             putb 01 9 02
                             puts 01 03mov rax, offset g_03 02
                             n3 = 01 k 02 ht 4
-                            曼 01 n3 02
+                            mgl 01 n3 02
                             putb 01 10 02
                             putb 01 9 02
                             puts 01 03mov rax, [rax]03 02
@@ -2063,7 +2063,7 @@ tt main 01 参数 02 08
                         lr t 08
                             n3 = 01 k 02 ht 4
                             q1 = lookup 01 n3 02
-                            f = 参标[找索引]
+                            f = argmark[idx]
                             lr f 08
                                 putb 01 9 02
                                 puts 01 03lea rax, [rbp+03 02
@@ -2123,19 +2123,19 @@ tt main 01 参数 02 08
                 n3 = 01 k 02 ht 4
                 f = tokis 01 n3 , 03=03 02
                 lr f 08
-                    q2 = 查全 01 k 02
+                    q2 = findall 01 k 02
                     lr q2 08
-                        v2 = 全大表[ 全索引 ]
+                        v2 = gsize[ allidx ]
                         t = 01 v2 02 >= 8
                         lr t 08
                             putb 01 9 02
                             puts 01 03mov rax, offset g_03 02
                             n3 = 01 k 02
-                            曼 01 n3 02
+                            mgl 01 n3 02
                             putb 01 10 02
                             00 下标 k+2
                             n3 = 01 k 02 ht 2
-                            载荷 01 n3 02
+                            pl 01 n3 02
                             00 越界检查
                             putb 01 9 02
                             puts 01 03cmp rax, 03 02
@@ -2144,8 +2144,8 @@ tt main 01 参数 02 08
                             putb 01 10 02
                             putb 01 9 02
                             puts 01 03jb .Lbok03 02
-                            else号 = 01 else号 02 ht 1
-                            q1 = else号
+                            elno = 01 elno 02 ht 1
+                            q1 = elno
                             puti 01 q1 02
                             putb 01 10 02
                             putb 01 9 02
@@ -2164,7 +2164,7 @@ tt main 01 参数 02 08
                             putb 01 9 02
                             puts 01 03mov rax, offset g_03 02
                             n3 = 01 k 02
-                            曼 01 n3 02
+                            mgl 01 n3 02
                             putb 01 10 02
                             putb 01 9 02
                             puts 01 03mov rcx, rax03 02
@@ -2179,7 +2179,7 @@ tt main 01 参数 02 08
                             puts 01 03push rax03 02
                             putb 01 10 02
                             00 右值 k+5：字母→调用或变量；否则载荷
-                            末 = 0
+                            endp = 0
                             n3 = 01 k 02 ht 5
                             c = head 01 n3 02
                             c = 01 c 02 hs 255
@@ -2190,7 +2190,7 @@ tt main 01 参数 02 08
                                 f2 = 01 q1 02 == 49
                                 lr f2 08
                                     n3 = 01 k 02 ht 6
-                                    载荷 01 n3 02
+                                    pl 01 n3 02
                                     putb 01 9 02
                                     puts 01 03push rax03 02
                                     putb 01 10 02
@@ -2205,29 +2205,29 @@ tt main 01 参数 02 08
                                     09
                                     lr f 08
                                         n3 = 01 k 02 ht 10
-                                        载荷 01 n3 02
+                                        pl 01 n3 02
                                         putb 01 9 02
                                         puts 01 03push rax03 02
                                         putb 01 10 02
                                         n3 = 01 k 02 ht 12
-                                        载荷 01 n3 02
+                                        pl 01 n3 02
                                         n3 = 01 k 02 ht 11
-                                        二op 01 n3 02
+                                        twoop 01 n3 02
                                         n3 = 01 k 02 ht 8
-                                        二op 01 n3 02
-                                        末 = 01 k 02 ht 13
+                                        twoop 01 n3 02
+                                        endp = 01 k 02 ht 13
                                     09
-                                    f2 = 01 末 02 == 0
+                                    f2 = 01 endp 02 == 0
                                     lr f2 08
                                         n3 = 01 k 02 ht 9
-                                        载荷 01 n3 02
+                                        pl 01 n3 02
                                         n3 = 01 k 02 ht 8
-                                        二op 01 n3 02
-                                        末 = 01 k 02 ht 9
+                                        twoop 01 n3 02
+                                        endp = 01 k 02 ht 9
                                     09
                                 09
                             09
-                            t = 是名 01 c 02
+                            t = isname 01 c 02
                             lr t 08
                                 n2 = 01 k 02 ht 6
                                 00 判断 k+6 是不是 01（括号开）：长度2且字节 48/49
@@ -2245,9 +2245,9 @@ tt main 01 参数 02 08
                                 09
                                 lr f2 08
                                     n = 0
-                                    参位 = 01 k 02 ht 7
+                                    apos = 01 k 02 ht 7
                                     ll 08
-                                        n3 = 参位
+                                        n3 = apos
                                         f = getlen 01 n3 02
                                         t = 01 f 02 == 2
                                         f = 0
@@ -2263,20 +2263,20 @@ tt main 01 参数 02 08
                                         lr f 08 ls 09
                                         f = tokis 01 n3 , 03,03 02
                                         lr f 08
-                                            参位 = 01 参位 02 ht 1
+                                            apos = 01 apos 02 ht 1
                                         09
-                                        n3 = 参位
-                                        载荷 01 n3 02
+                                        n3 = apos
+                                        pl 01 n3 02
                                         putb 01 9 02
                                         puts 01 03push rax03 02
                                         putb 01 10 02
                                         n = 01 n 02 ht 1
-                                        参位 = 01 参位 02 ht 1
+                                        apos = 01 apos 02 ht 1
                                     09
                                     putb 01 9 02
                                     puts 01 03call fn_03 02
                                     n3 = 01 k 02 ht 5
-                                    曼 01 n3 02
+                                    mgl 01 n3 02
                                     putb 01 10 02
                                     t = 01 n 02 > 0
                                     lr t 08
@@ -2286,14 +2286,14 @@ tt main 01 参数 02 08
                                         puti 01 q1 02
                                         putb 01 10 02
                                     09
-                                    末 = 参位
+                                    endp = apos
                                 09
                             09
                             00 还没发右值（末==0）→ 当变量载荷一次
-                            f2 = 01 末 02 == 0
+                            f2 = 01 endp 02 == 0
                             lr f2 08
-                                载荷 01 n3 02
-                                末 = 01 k 02 ht 5
+                                pl 01 n3 02
+                                endp = 01 k 02 ht 5
                             09
                             putb 01 9 02
                             puts 01 03mov rcx, rax03 02
@@ -2304,7 +2304,7 @@ tt main 01 参数 02 08
                             putb 01 9 02
                             puts 01 03mov [rax], rcx03 02
                             putb 01 10 02
-                            i = 01 末 02
+                            i = 01 endp 02
                         09
                     09
                 09
@@ -2329,16 +2329,16 @@ tt main 01 参数 02 08
                 t = 01 c 02 == 91
                 lr t 08
                     n3 = 01 k 02 ht 2
-                    q2 = 查全 01 n3 02
+                    q2 = findall 01 n3 02
                     lr q2 08
-                        v2 = 全大表[ 全索引 ]
+                        v2 = gsize[ allidx ]
                         t = 01 v2 02 >= 8
                         lr t 08
                             00 基址 offset（先输出）
                             putb 01 9 02
                             puts 01 03mov rax, offset g_03 02
                             n3 = 01 k 02 ht 2
-                            曼 01 n3 02
+                            mgl 01 n3 02
                             putb 01 10 02
                             00 先判表达式下标：01 A op B 02（如 缓冲[ 01 p 02 ht i 02 ]）
                             n3 = 01 k 02 ht 4
@@ -2351,14 +2351,14 @@ tt main 01 参数 02 08
                             lr q1 08
                                 00 表达式下标：载荷 A=k+5 / push / 载荷 B=k+7 / 二op(k+6)
                                 n3 = 01 k 02 ht 5
-                                载荷 01 n3 02
+                                pl 01 n3 02
                                 putb 01 9 02
                                 puts 01 03push rax03 02
                                 putb 01 10 02
                                 n3 = 01 k 02 ht 7
-                                载荷 01 n3 02
+                                pl 01 n3 02
                                 n3 = 01 k 02 ht 6
-                                二op 01 n3 02
+                                twoop 01 n3 02
                                 i = 01 i 02 ht 3
                             09
                             lr 01 q1 02 == 0 08
@@ -2378,7 +2378,7 @@ tt main 01 参数 02 08
                             q2 = 01 t 02 == 0
                             lr q2 08
                                 q1 = lookup 01 n3 02
-                                f2 = 参标[找索引]
+                                f2 = argmark[idx]
                                 lr f2 08
                                     putb 01 9 02
                                     puts 01 03lea rax, [rbp+03 02
@@ -2407,8 +2407,8 @@ tt main 01 参数 02 08
                             putb 01 10 02
                             putb 01 9 02
                             puts 01 03jb .Lbok03 02
-                            else号 = 01 else号 02 ht 1
-                            q1 = else号
+                            elno = 01 elno 02 ht 1
+                            q1 = elno
                             puti 01 q1 02
                             putb 01 10 02
                             putb 01 9 02
@@ -2428,7 +2428,7 @@ tt main 01 参数 02 08
                             putb 01 9 02
                             puts 01 03mov rax, offset g_03 02
                             n3 = 01 k 02 ht 2
-                            曼 01 n3 02
+                            mgl 01 n3 02
                             putb 01 10 02
                             putb 01 9 02
                             puts 01 03mov rcx, rax03 02
@@ -2458,7 +2458,7 @@ tt main 01 参数 02 08
         00 zz 值 → 求值进 rax，再 jmp .Lret_
         f = tokis 01 k , 03zz03 02
         lr f 08
-            zz已 = 0
+            zzdone = 0
             n3 = 01 k 02 ht 1
             c = head 01 n3 02
             c = 01 c 02 hs 255
@@ -2473,8 +2473,8 @@ tt main 01 参数 02 08
                 lr f 08
                     t = 01 q1 02 > 4
                     lr t 08
-                        zz已 = 1
-                        n2 = 登串 01 n3 02
+                        zzdone = 1
+                        n2 = regstr 01 n3 02
                         putb 01 9 02
                         puts 01 03mov rax, offset .Lstr03 02
                         puti 01 n2 02
@@ -2490,7 +2490,7 @@ tt main 01 参数 02 08
             f = 01 f 02 hs 01 q2 02
             lr f 08
                 00 数字：mov rax, 值
-                zz已 = 1
+                zzdone = 1
                 putb 01 9 02
                 puts 01 03mov rax, 03 02
                 n3 = 01 k 02 ht 1
@@ -2498,7 +2498,7 @@ tt main 01 参数 02 08
                 putb 01 10 02
             09
             00 其余按变量：全局查全命中走 offset g_，否则局部/参数（原样）
-            q1 = 01 zz已 02 == 0
+            q1 = 01 zzdone 02 == 0
             lr q1 08
                 n2 = lookup 01 n3 02
                 q2 = 01 n2 02 >= 8
@@ -2507,13 +2507,13 @@ tt main 01 参数 02 08
                 f2 = 01 q2 02 == 0
                 q2 = 0
                 lr f2 08
-                    q2 = 查全 01 n3 02
+                    q2 = findall 01 n3 02
                 09
                 lr q2 08
                     putb 01 9 02
                     puts 01 03mov rax, offset g_03 02
                     n2 = 01 k 02 ht 1
-                    曼 01 n2 02
+                    mgl 01 n2 02
                     putb 01 10 02
                     putb 01 9 02
                     puts 01 03mov rax, [rax]03 02
@@ -2521,7 +2521,7 @@ tt main 01 参数 02 08
                 09
                 q2 = 01 f2 02 == 0
                 lr q2 08
-                    f = 参标[找索引]
+                    f = argmark[idx]
                     lr f 08
                         putb 01 9 02
                         puts 01 03lea rax, [rbp+03 02
@@ -2545,7 +2545,7 @@ tt main 01 参数 02 08
             putb 01 9 02
             puts 01 03jmp .Lret_03 02
             n3 = 01 r 02
-            曼 01 n3 02
+            mgl 01 n3 02
             putb 01 10 02
         09
 
@@ -2557,12 +2557,12 @@ tt main 01 参数 02 08
             n2 = 01 k 02 ht 1
             c = head 01 n2 02
             c = 01 c 02 hs 255
-            比较 = 0
-            lr 01 c 02 == 48 08 比较 = 1 09
-            lr 01 比较 02 == 1 08
+            cmp = 0
+            lr 01 c 02 == 48 08 cmp = 1 09
+            lr 01 cmp 02 == 1 08
                 00 条件表达式：lr 01 A op B 02 08  或  lr 01 A 02 op 01 B 02 08
                 n3 = 01 k 02 ht 2
-                载荷 01 n3 02
+                pl 01 n3 02
                 putb 01 9 02
                 puts 01 03push rax03 02
                 putb 01 10 02
@@ -2586,13 +2586,13 @@ tt main 01 参数 02 08
                     00 形1：A op B 02 → op=k+3, B=k+4
                     i = 01 i 02 ht 5
                 09
-                载荷 01 n3 02
-                二op 01 q1 02
+                pl 01 n3 02
+                twoop 01 q1 02
                 putb 01 9 02
                 puts 01 03test rax, rax03 02
                 putb 01 10 02
             09
-            lr 01 比较 02 == 0 08
+            lr 01 cmp 02 == 0 08
                 00 变量形态
                 n3 = lookup 01 n2 02
                 putb 01 9 02
@@ -2607,31 +2607,31 @@ tt main 01 参数 02 08
                 puts 01 03test rax, rax03 02
                 putb 01 10 02
             09
-            比较 = 0
-            else号 = 01 else号 02 ht 1
+            cmp = 0
+            elno = 01 elno 02 ht 1
             putb 01 9 02
             puts 01 03jz .Lelse03 02
-            puti 01 else号 02
+            puti 01 elno 02
             putb 01 10 02
-            else栈顶 = 01 else栈顶 02 ht 1
-            else栈[else栈顶] = else号
-            深栈[else栈顶] = 括号深
-            型栈[else栈顶] = 1
+            estop = 01 estop 02 ht 1
+            elstack[estop] = elno
+            dstack[estop] = pdepth
+            tstack[estop] = 1
         09
 
         00 lh/lz A B：比较跳转（lh 不等 / lz 相等）→ 载荷A/push/载荷B/rcx/cmp/je|jne .LelseN
         f = tokis 01 k , 03lh03 02
-        lr f 08 比较 = 1 09
+        lr f 08 cmp = 1 09
         f = tokis 01 k , 03lz03 02
-        lr f 08 比较 = 2 09
-        lr 比较 08
+        lr f 08 cmp = 2 09
+        lr cmp 08
             n2 = 01 k 02 ht 1
-            载荷 01 n2 02
+            pl 01 n2 02
             putb 01 9 02
             puts 01 03push rax03 02
             putb 01 10 02
             n2 = 01 k 02 ht 2
-            载荷 01 n2 02
+            pl 01 n2 02
             putb 01 9 02
             puts 01 03mov rcx, rax03 02
             putb 01 10 02
@@ -2641,23 +2641,23 @@ tt main 01 参数 02 08
             putb 01 9 02
             puts 01 03cmp rax, rcx03 02
             putb 01 10 02
-            else号 = 01 else号 02 ht 1
+            elno = 01 elno 02 ht 1
             putb 01 9 02
-            f = 01 比较 02 == 1
+            f = 01 cmp 02 == 1
             lr f 08
                 puts 01 03je .Lelse03 02
             09
-            f = 01 比较 02 == 2
+            f = 01 cmp 02 == 2
             lr f 08
                 puts 01 03jne .Lelse03 02
             09
-            puti 01 else号 02
+            puti 01 elno 02
             putb 01 10 02
-            else栈顶 = 01 else栈顶 02 ht 1
-            else栈[else栈顶] = else号
-            深栈[else栈顶] = 括号深
-            型栈[else栈顶] = 1
-            比较 = 0
+            estop = 01 estop 02 ht 1
+            elstack[estop] = elno
+            dstack[estop] = pdepth
+            tstack[estop] = 1
+            cmp = 0
         09
 
         00 ll 循环：k=ll，k+1 记号首字节48('0')，第二字节56('8')→无限循环，49('1')→条件循环
@@ -2673,32 +2673,32 @@ tt main 01 参数 02 08
                 00 无限循环：bytes1==56('8')
                 f = 01 q2 02 == 56
                 lr f 08
-                    else号 = 01 else号 02 ht 1
-                    q1 = else号
-                    else号 = 01 else号 02 ht 1
+                    elno = 01 elno 02 ht 1
+                    q1 = elno
+                    elno = 01 elno 02 ht 1
                     puts 01 03.Lltop03 02
                     puti 01 q1 02
                     puts 01 03:03 02
                     putb 01 10 02
-                    else栈顶 = 01 else栈顶 02 ht 1
-                    else栈[else栈顶] = else号
-                    顶栈[else栈顶] = q1
-                    深栈[else栈顶] = 括号深
-                    型栈[else栈顶] = 2
+                    estop = 01 estop 02 ht 1
+                    elstack[estop] = elno
+                    topstack[estop] = q1
+                    dstack[estop] = pdepth
+                    tstack[estop] = 2
                 09
                 00 条件循环：bytes1==49('1')，条件 01 变量 02 取 k+2 变量名
                 f = 01 q2 02 == 49
                 lr f 08
-                    else号 = 01 else号 02 ht 1
-                    q1 = else号
-                    else号 = 01 else号 02 ht 1
+                    elno = 01 elno 02 ht 1
+                    q1 = elno
+                    elno = 01 elno 02 ht 1
                     puts 01 03.Lwtop03 02
                     puti 01 q1 02
                     puts 01 03:03 02
                     putb 01 10 02
                     00 条件：ll 01 A 02 < 01 B 02 08 → 载荷A/push/载荷B/rcx/cmp/setb/movzx/test/jz
                     n3 = 01 k 02 ht 2
-                    载荷 01 n3 02
+                    pl 01 n3 02
                     00 判 k+4 是否 08：是则单条件 ll 01 A 02 08，否则比较序列
                     n3 = 01 k 02 ht 4
                     c = head 01 n3 02
@@ -2717,7 +2717,7 @@ tt main 01 参数 02 08
                     puts 01 03push rax03 02
                     putb 01 10 02
                     n3 = 01 k 02 ht 6
-                    载荷 01 n3 02
+                    pl 01 n3 02
                     putb 01 9 02
                     puts 01 03mov rcx, rax03 02
                     putb 01 10 02
@@ -2739,34 +2739,34 @@ tt main 01 参数 02 08
                     09
                     putb 01 9 02
                     puts 01 03jz .Lwend03 02
-                    puti 01 else号 02
+                    puti 01 elno 02
                     putb 01 10 02
-                    else栈顶 = 01 else栈顶 02 ht 1
-                    else栈[else栈顶] = else号
-                    顶栈[else栈顶] = q1
-                    深栈[else栈顶] = 括号深
-                    型栈[else栈顶] = 3
+                    estop = 01 estop 02 ht 1
+                    elstack[estop] = elno
+                    topstack[estop] = q1
+                    dstack[estop] = pdepth
+                    tstack[estop] = 3
                 09
             09
         09
 
         00 ── 顶层全局声明 ts 名 = 值 / tf 名[N]（有函==0 时才处理）──
-        t = 01 有函 02 == 0
+        t = 01 hasfn 02 == 0
         lr t 08
             n3 = tokis 01 k , 03ts03 02
             lr n3 08
                 n2 = 01 k 02 ht 1
                 q1 = 8
-                登全局 01 n2 , q1 02
+                regglob 01 n2 , q1 02
                 i = 01 k 02 ht 1
                 00 可选初值：ts 名 = 数字
                 n3 = 01 k 02 ht 2
                 f = tokis 01 n3 , 03=03 02
                 lr f 08
                     n3 = 01 k 02 ht 3
-                    q1 = 串转数 01 n3 02
-                    n2 = 01 全局数 02 hz 1
-                    全初[n2] = q1
+                    q1 = str2num 01 n3 02
+                    n2 = 01 nglob 02 hz 1
+                    ginit[n2] = q1
                     i = 01 k 02 ht 3
                 09
             09
@@ -2774,9 +2774,9 @@ tt main 01 参数 02 08
             lr n3 08
                 n2 = 01 k 02 ht 1
                 q1 = 01 k 02 ht 3
-                q1 = 串转数 01 q1 02
+                q1 = str2num 01 q1 02
                 q1 = 01 q1 02 hh 8
-                登全局 01 n2 , q1 02
+                regglob 01 n2 , q1 02
                 i = 01 k 02 ht 3
             09
         09
@@ -2806,14 +2806,14 @@ tt main 01 参数 02 08
                     lr t 08
                         00 表达式地址：载荷 A=k+5 / push / 载荷 B=k+7 / 二op(k+6)
                         n2 = 01 k 02 ht 5
-                        载荷 01 n2 02
+                        pl 01 n2 02
                         putb 01 9 02
                         puts 01 03push rax03 02
                         putb 01 10 02
                         n2 = 01 k 02 ht 7
-                        载荷 01 n2 02
+                        pl 01 n2 02
                         n2 = 01 k 02 ht 6
-                        二op 01 n2 02
+                        twoop 01 n2 02
                         i = 01 i 02 ht 3
                     09
                     lr 01 t 02 == 0 08
@@ -2825,13 +2825,13 @@ tt main 01 参数 02 08
                     t = 01 t 02 hs 01 q2 02
                     q2 = 01 t 02 == 0
                     lr q2 08
-                        q2 = 查全 01 n2 02
+                        q2 = findall 01 n2 02
                     09
                     lr q2 08
                         putb 01 9 02
                         puts 01 03mov rax, offset g_03 02
                         n3 = 01 k 02 ht 4
-                        曼 01 n3 02
+                        mgl 01 n3 02
                         putb 01 10 02
                         putb 01 9 02
                         puts 01 03mov rax, [rax]03 02
@@ -2839,7 +2839,7 @@ tt main 01 参数 02 08
                     09
                     t = 01 t 02 hr 01 q2 02
                     lr t 08
-                        f2 = 参标[找索引]
+                        f2 = argmark[idx]
                         lr f2 08
                             putb 01 9 02
                             puts 01 03lea rax, [rbp+03 02
@@ -2878,40 +2878,40 @@ tt main 01 参数 02 08
 
         00 ── 函数调用：标识符 + 01( 参数 02 → eval/push + call fn_名 + add rsp ──
         00 排除 ll/lz/lh/fh/fr/lr（它们是"关键字+01括号"形态，会被误认成调用）
-        跳过 = 0
+        skip = 0
         n3 = tokis 01 k , 03ll03 02
-        lr n3 08 跳过 = 1 09
+        lr n3 08 skip = 1 09
         n3 = tokis 01 k , 03lr03 02
-        lr n3 08 跳过 = 1 09
+        lr n3 08 skip = 1 09
         n3 = tokis 01 k , 03lz03 02
-        lr n3 08 跳过 = 1 09
+        lr n3 08 skip = 1 09
         n3 = tokis 01 k , 03lh03 02
-        lr n3 08 跳过 = 1 09
+        lr n3 08 skip = 1 09
         n3 = tokis 01 k , 03fh03 02
-        lr n3 08 跳过 = 1 09
+        lr n3 08 skip = 1 09
         n3 = tokis 01 k , 03fr03 02
-        lr n3 08 跳过 = 1 09
-        n3 = 01 跳过 02 == 0
+        lr n3 08 skip = 1 09
+        n3 = 01 skip 02 == 0
         lr n3 08
             00 宿主内建名识别：写字→_rt_sb / 写字节→_rt_putc / 写串→_rt_puts / 写数→_rt_puti
-            内建名 = 0
-            f = tokis 01 k , 03写字03 02
-            lr f 08 内建名 = 1 09
-            f = tokis 01 k , 03写字节03 02
-            lr f 08 内建名 = 2 09
-            f = tokis 01 k , 03写串03 02
-            lr f 08 内建名 = 3 09
-            f = tokis 01 k , 03写数03 02
-            lr f 08 内建名 = 4 09
+            bname = 0
+            f = tokis 01 k , 03putw03 02
+            lr f 08 bname = 1 09
+            f = tokis 01 k , 03putc03 02
+            lr f 08 bname = 2 09
+            f = tokis 01 k , 03puts03 02
+            lr f 08 bname = 3 09
+            f = tokis 01 k , 03puti03 02
+            lr f 08 bname = 4 09
             n3 = 01 k 02
             c = head 01 n3 02
             c = 01 c 02 hs 255
-            t = 是名 01 c 02
-            f = 01 内建名 02 > 0
+            t = isname 01 c 02
+            f = 01 bname 02 > 0
             t = 01 t 02 hr 01 f 02
             lr t 08
                 f = 1
-                q2 = 01 内建名 02 > 0
+                q2 = 01 bname 02 > 0
                 f = 01 f 02 hr 01 q2 02
                 lr f 08
                 n2 = 01 k 02 ht 1
@@ -2925,8 +2925,8 @@ tt main 01 参数 02 08
                         00 确认 k+1 是 01 左括号 → 是函数调用
                         n = 0
                         q1 = 01 k 02 ht 2
-                        ll 01 q1 02 < 01 记数 02 08
-                            参已 = 0
+                        ll 01 q1 02 < 01 cnt 02 08
+                            argdone = 0
                             00 右括号 02 → break
                             n3 = head 01 q1 02
                             n3 = 01 n3 02 hs 255
@@ -2967,17 +2967,17 @@ tt main 01 参数 02 08
                                         00 形B：A=q1 op=q1+1 B=q1+2
                                         q1 = 01 q1 02 ht 3
                                     09
-                                    载荷 01 q2 02
+                                    pl 01 q2 02
                                     putb 01 9 02
                                     puts 01 03push rax03 02
                                     putb 01 10 02
-                                    载荷 01 n3 02
-                                    二op 01 f 02
+                                    pl 01 n3 02
+                                    twoop 01 f 02
                                     putb 01 9 02
                                     puts 01 03push rax03 02
                                     putb 01 10 02
                                     n = 01 n 02 ht 1
-                                    参已 = 1
+                                    argdone = 1
                                     Zn
                                 09
                             09
@@ -2992,7 +2992,7 @@ tt main 01 参数 02 08
                                     t = getlen 01 q1 02
                                     q2 = 01 t 02 > 4
                                     lr q2 08
-                                        n2 = 登串 01 q1 02
+                                        n2 = regstr 01 q1 02
                                         putb 01 9 02
                                         puts 01 03mov rax, offset .Lstr03 02
                                         puti 01 n2 02
@@ -3001,7 +3001,7 @@ tt main 01 参数 02 08
                                         puts 01 03push rax03 02
                                         putb 01 10 02
                                         n = 01 n 02 ht 1
-                                        参已 = 1
+                                        argdone = 1
                                     09
                                 09
                             09
@@ -3011,7 +3011,7 @@ tt main 01 参数 02 08
                             q2 = 01 c 02 >= 48
                             f = 01 c 02 <= 57
                             q2 = 01 q2 02 hs 01 f 02
-                            t = 01 参已 02 == 0
+                            t = 01 argdone 02 == 0
                             q2 = 01 q2 02 hs 01 t 02
                             t = 01 q2 02 == 1
                             lr t 08
@@ -3027,12 +3027,12 @@ tt main 01 参数 02 08
                             00 变量参数：首字节 97..122
                             c = head 01 q1 02
                             c = 01 c 02 hs 255
-                            t = 是名 01 c 02
+                            t = isname 01 c 02
                             lr t 08
                                 f = 1
                                 lr f 08
                                     n2 = lookup 01 q1 02
-                                    f = 参标[找索引]
+                                    f = argmark[idx]
                                     lr f 08
                                         putb 01 9 02
                                         puts 01 03lea rax, [rbp+03 02
@@ -3061,25 +3061,25 @@ tt main 01 参数 02 08
                         09
                         00 右括号 02 时停（上面循环碰到 02 时三个判据都不满足会 continue，需显式 break）
                         putb 01 9 02
-                        f = 01 内建名 02 == 0
+                        f = 01 bname 02 == 0
                         lr f 08
                             puts 01 03call fn_03 02
                             n2 = 01 k 02
-                            曼 01 n2 02
+                            mgl 01 n2 02
                         09
-                        f = 01 内建名 02 == 1
+                        f = 01 bname 02 == 1
                         lr f 08
                             puts 01 03call _rt_sb03 02
                         09
-                        f = 01 内建名 02 == 2
+                        f = 01 bname 02 == 2
                         lr f 08
                             puts 01 03call _rt_putc03 02
                         09
-                        f = 01 内建名 02 == 3
+                        f = 01 bname 02 == 3
                         lr f 08
                             puts 01 03call _rt_puts03 02
                         09
-                        f = 01 内建名 02 == 4
+                        f = 01 bname 02 == 4
                         lr f 08
                             puts 01 03call _rt_puti03 02
                         09
@@ -3134,7 +3134,7 @@ tt main 01 参数 02 08
     00 收尾：补最后一个函数的尾声
     puts 01 03.Lret_03 02
     n3 = 01 r 02
-    曼 01 n3 02
+    mgl 01 n3 02
     puts 01 03:03 02
     putb 01 10 02
     putb 01 9 02
@@ -3148,13 +3148,13 @@ tt main 01 参数 02 08
     putb 01 10 02
 
     00 ── dd 字符串表：输出 .section .rodata ──
-    lr 串数 08
+    lr nstr 08
         putb 01 10 02
         putb 01 9 02
         puts 01 03.section .rodata03 02
         putb 01 10 02
         i = 0
-        ll 01 i 02 < 01 串数 02 08
+        ll 01 i 02 < 01 nstr 02 08
             puts 01 03.Lstr03 02
             puti 01 i 02
             puts 01 03:03 02
@@ -3162,8 +3162,8 @@ tt main 01 参数 02 08
             putb 01 9 02
             puts 01 03.asciz 03 02
             putb 01 34 02
-            n2 = 串位[ i ]
-            n3 = 串长[ i ]
+            n2 = strpos[ i ]
+            n3 = slen[ i ]
             q1 = 0
             ll 01 q1 02 < 01 n3 02 08
                 c = fh 01 01 n2 ht q1 02 02
@@ -3181,7 +3181,7 @@ tt main 01 参数 02 08
     09
 
     00 ── ts 全局表：输出 .bss/.comm + .data ──
-    lr 全局数 08
+    lr nglob 08
         putb 01 10 02
         putb 01 9 02
         puts 01 03.section .bss03 02
@@ -3190,16 +3190,16 @@ tt main 01 参数 02 08
         puts 01 03.align 403 02
         putb 01 10 02
         i = 0
-        ll 01 i 02 < 01 全局数 02 08
-            f = 全初[ i ]
+        ll 01 i 02 < 01 nglob 02 08
+            f = ginit[ i ]
             q2 = 01 f 02 == 0
             lr q2 08
                 putb 01 9 02
                 puts 01 03.comm g_03 02
-                n2 = 全位表[ i ]
-                曼 01 n2 02
+                n2 = gpos[ i ]
+                mgl 01 n2 02
                 puts 01 03, 03 02
-                q1 = 全大表[ i ]
+                q1 = gsize[ i ]
                 puti 01 q1 02
                 puts 01 03, 403 02
                 putb 01 10 02
@@ -3214,17 +3214,17 @@ tt main 01 参数 02 08
         puts 01 03.align 803 02
         putb 01 10 02
         i = 0
-        ll 01 i 02 < 01 全局数 02 08
-            f = 全初[ i ]
+        ll 01 i 02 < 01 nglob 02 08
+            f = ginit[ i ]
             lr f 08
                 puts 01 03g_03 02
-                n2 = 全位表[ i ]
-                曼 01 n2 02
+                n2 = gpos[ i ]
+                mgl 01 n2 02
                 puts 01 03:03 02
                 putb 01 10 02
                 putb 01 9 02
                 puts 01 03.quad 03 02
-                q1 = 全初[ i ]
+                q1 = ginit[ i ]
                 puti 01 q1 02
                 putb 01 10 02
             09
@@ -3232,18 +3232,18 @@ tt main 01 参数 02 08
         09
     09
 
-    写串 01 03诊断:长=03 02
-    写数 01 长 02
-    写串 01 03 记数=03 02
-    写数 01 记数 02
+    puts 01 03诊断:len=03 02
+    puti 01 len 02
+    puts 01 03 cnt=03 02
+    puti 01 cnt 02
     puts 01 03 求值测=03 02
     q1 = 01 8 02
     q2 = eval 01 q1 02
     puti 01 q2 02
     putb 01 10 02
-    写串 01 03 出长=03 02
-    写数 01 出长 02
-    写字节 01 10 02
-    写文件 01 03新清单999.txt03 , 出区 , 出长 02
+    puts 01 03 olen=03 02
+    puti 01 olen 02
+    putc 01 10 02
+    wrfile 01 03新清单999.txt03 , outbuf , olen 02
     zz 0
 09

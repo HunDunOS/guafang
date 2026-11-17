@@ -11,32 +11,32 @@
 00  本例子只数 ASCII 字符（英文、数字、符号）。
 00 ══════════════════════════════════════════════════════
 
-tt 数长度 01 串 02 -> u64  08
+tt numlen 01 s 02 -> u64  08
     tz n = 0
-    tz 址 = 0
-    tz 字节 = 0
+    tz addr = 0
+    tz byte = 0
 
-    址 = 串
+    addr = s
     n = 0
     ll  08
-        字节 = fh 址
-        字节 = 01 字节 hs 255 02
-        lz 字节 0  08 ls 09
+        byte = fh addr
+        byte = 01 byte hs 255 02
+        lz byte 0  08 ls 09
         n = 01 n ht 1 02
-        址 = 01 址 ht 1 02
+        addr = 01 addr ht 1 02
      09
     zz n
  09
 
-tt 主 01 02 -> u64  08
-    tz 串 = 0
-    串 = "Hello LiuYao "
+tt zhu 01 02 -> u64  08
+    tz s = 0
+    s = "Hello Guafang "
 
-    写串 01 串 02
-    写字节 01 10 02
-    写串 01 "长度 " 02
-    写数 01 zt 数长度 01 串 02 02
-    写字节 01 10 02
+    puts 01 s 02
+    putc 01 10 02
+    puts 01 "长度 " 02
+    puti 01 zt numlen 01 s 02 02
+    putc 01 10 02
 
     zz 0
  09

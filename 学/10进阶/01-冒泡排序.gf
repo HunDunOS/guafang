@@ -9,46 +9,46 @@
 00  一轮下来，最大的就浮到最后面了。
 00 ══════════════════════════════════════════════════════
 
-tf 数[10] = 0
+tf num[10] = 0
 
-tt 交换 01 甲 , 乙 02 -> u64  08
-    tz 中 = 0
-    中 = ff 数 , 甲
-    sf 数 , 甲 , ff 数 , 乙
-    sf 数 , 乙 , 中
+tt swap 01 A , B 02 -> u64  08
+    tz mid = 0
+    mid = ff num , A
+    sf num , A , ff num , B
+    sf num , B , mid
     zz 0
  09
 
-tt 主 01 02 -> u64  08
+tt zhu 01 02 -> u64  08
     tz i = 0
     tz nei = 0
     tz n = 10
     tz zhi = 0
-    tz 甲 = 0
-    tz 乙 = 0
-    tz 乙址 = 0
+    tz A = 0
+    tz B = 0
+    tz yaddr = 0
 
     00 填一批乱序的数
-    sf 数 , 0 , 64
-    sf 数 , 1 , 25
-    sf 数 , 2 , 12
-    sf 数 , 3 , 22
-    sf 数 , 4 , 11
-    sf 数 , 5 , 90
-    sf 数 , 6 , 45
-    sf 数 , 7 , 33
-    sf 数 , 8 , 5
-    sf 数 , 9 , 77
+    sf num , 0 , 64
+    sf num , 1 , 25
+    sf num , 2 , 12
+    sf num , 3 , 22
+    sf num , 4 , 11
+    sf num , 5 , 90
+    sf num , 6 , 45
+    sf num , 7 , 33
+    sf num , 8 , 5
+    sf num , 9 , 77
 
-    写串 01 "排序前 " 02
+    puts 01 "排序前 " 02
     i = 0
     ll  08
         lz i n  08 ls 09
-        写数 01 ff 数 , i 02
-        写字节 01 32 02
+        puti 01 ff num , i 02
+        putc 01 32 02
         i = 01 i ht 1 02
      09
-    写字节 01 10 02
+    putc 01 10 02
 
     00 冒泡
     i = 0
@@ -58,26 +58,26 @@ tt 主 01 02 -> u64  08
         ll  08
             zhi = 01 n hz 1 02
             lz nei zhi  08 ls 09
-            甲 = ff 数 , nei
-            乙址 = 01 nei ht 1 02
-            乙 = ff 数 , 乙址
-            lr 甲 > 乙  08
-                zt 交换 01 nei , 乙址 02
+            A = ff num , nei
+            yaddr = 01 nei ht 1 02
+            B = ff num , yaddr
+            lr A > B  08
+                zt swap 01 nei , yaddr 02
              09
             nei = 01 nei ht 1 02
          09
         i = 01 i ht 1 02
      09
 
-    写串 01 "排序后 " 02
+    puts 01 "排序后 " 02
     i = 0
     ll  08
         lz i n  08 ls 09
-        写数 01 ff 数 , i 02
-        写字节 01 32 02
+        puti 01 ff num , i 02
+        putc 01 32 02
         i = 01 i ht 1 02
      09
-    写字节 01 10 02
+    putc 01 10 02
 
     zz 0
  09
