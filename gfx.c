@@ -2554,3 +2554,5 @@ int main(int argc, char **argv) {
     printf("     危险统计：wx 危险块 %d 个，原始指针操作 %d 处\n", wx_blocks, raw_ops);
     return 0;
 }
+
+/* 六爻(lyc, .ly) 已全量改写为卦方(Guafang, .gf)；本文件即卦方 stage0 前端。 */
