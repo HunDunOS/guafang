@@ -10,3 +10,5 @@
 # 主语言权重
 *.c     linguist-detectable
 *.s     linguist-detectable
+
+# 触发 GitHub 语言统计重算（.ly 全量转 .gf 之后）
