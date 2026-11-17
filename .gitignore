@@ -33,3 +33,10 @@ __pycache__/
 *_old.*
 out.s
 新清单999.txt
+gfx2.obj*
+*.obj
+*.obj.ly
+*.obj.reloc
+*.obj.sym
+*.obj.sym.size
+新清单999.txt
