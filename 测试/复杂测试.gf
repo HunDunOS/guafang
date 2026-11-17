@@ -1,0 +1,144 @@
+00 复杂测试程序
+
+00 ---- 全局变量 ----
+ts g_count = 0
+ts g_sum = 0
+
+00 ---- 全局数组 ----
+tf g_arr[16]: u64
+
+00 函数0：输出一个字符
+tt chu 01 c u64 02 -> u64  08
+    zt 写字节 01 c 02
+ 09
+
+00 函数1：加法
+tt add 01 a u64 b u64 02 -> u64  08
+    ht a b
+    zz
+ 09
+
+00 函数2：阶乘
+tt fact 01 n u64 02 -> u64  08
+    lr n <= 1  08
+        zz 1
+     09
+    tz t = n hz 1
+    tz r = zt fact 01 t 02
+    hh n r
+    zz
+ 09
+
+00 函数3：斐波那契
+tt fib 01 n u64 02 -> u64  08
+    lr n <= 1  08
+        zz n
+     09
+    tz a = zt fib 01 n hz 1 02
+    tz b = zt fib 01 n hz 2 02
+    ht a b
+    zz
+ 09
+
+00 函数4：数组求和
+tt sum_arr 01 arr u64 len u64 02 -> u64  08
+    tz i = 0
+    tz s = 0
+    ll  08
+        lz i len  08 ls  09
+        tz v = arr[i]
+        s = ht s v
+        i = ht i 1
+     09
+    zz s
+ 09
+
+00 函数5：判断质数
+tt is_prime 01 n u64 02 -> u64  08
+    lr n <= 1  08
+        zz 0
+     09
+    tz i = 2
+    ll  08
+        lz i ht i <= n  08 ls  09
+        tz r = n hf i
+        lr r == 0  08
+            zz 0
+         09
+        i = ht i 1
+     09
+    zz 1
+ 09
+
+00 函数6：冒泡排序
+tt bubble_sort 01 arr u64 len u64 02 -> u64  08
+    tz i = 0
+    ll  08
+        lz i len hz 1  08 ls  09
+        tz j = 0
+        ll  08
+            lz j len hz i hz 1  08 ls  09
+            tz a = arr[j]
+            tz b = arr[j ht 1]
+            lr a > b  08
+                arr[j] = b
+                arr[j ht 1] = a
+             09
+            j = ht j 1
+         09
+        i = ht i 1
+     09
+    zz 0
+ 09
+
+00 主函数
+tt zhu 01 fname 02 -> u64  08
+00 初始化数组
+    tz i = 0
+    ll  08
+        lz i 16  08 ls  09
+        g_arr[i] = i ht 7
+        i = ht i 1
+     09
+
+00 计算阶乘
+    tz f = zt fact 01 10 02
+    st dd "fact(10) = "
+    st dt f
+
+00 计算斐波那契
+    tz fib10 = zt fib 01 10 02
+    st dd " 
+fib(10) = "
+    st dt fib10
+
+00 数组求和
+    tz s = zt sum_arr 01 g_arr, 16 02
+    st dd " 
+sum(arr) = "
+    st dt s
+
+00 判断质数
+    tz p = zt is_prime 01 97 02
+    st dd " 
+is_prime(97) = "
+    st dt p
+
+00 冒泡排序
+    zt bubble_sort 01 g_arr, 16 02
+    st dd " 
+after sort: "
+    tz j = 0
+    ll  08
+        lz j 16  08 ls  09
+        tz v = g_arr[j]
+        st dt v
+        zt chu 01 32 02
+        j = ht j 1
+     09
+
+    st dd " 
+done!
+ "
+    zz 0
+ 09

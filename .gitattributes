@@ -1,0 +1,12 @@
+# 源码一律不做换行转换：卦方的对拍要求逐字节一致，
+# 任何 CRLF 自动改写都会让 sha256 回归失效
+* -text
+
+# GitHub 语言识别修正：.gf 默认被当成 Grammatical Framework 语法文件，
+# 这里强制按 C 统计，否则整个仓库会被归类到语言学/乐谱项目
+*.gf    linguist-language=C linguist-detectable
+# 旧 .ly（六爻）已全部改写成 .gf，仓库内不再保留 .ly，故不再需要 .ly 规则
+
+# 主语言权重
+*.c     linguist-detectable
+*.s     linguist-detectable

@@ -1,0 +1,35 @@
+# 构建产物
+*.o
+*.obj
+*.bin
+*.elf
+*.exe
+*.out
+*.s
+!宿主64.s
+*.map
+build/
+构建/
+
+# 对象与中间文件
+*.符号
+*.重定位
+*.尺寸
+*.影
+*.dump
+
+# Python
+__pycache__/
+*.pyc
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+
+# 临时与备份
+*.tmp
+*.bak
+*_old.*
+out.s
+新清单999.txt
