@@ -1716,7 +1716,26 @@ tt main 01 argv 02 08
                             00 型1=lr：输出 .LelseN:
                             cond a0 01 nv3 02 a1 1
                             lr cond 08
+                                00 如果后面紧跟 ld（else），先跳过一个结束标签
+                                nv2 a0 01 ktok 02 ht 1
+                                cond a0 is2 01 nv2 a9 108 a9 100 02
+                                lr cond 08
+                                    putb 01 9 02
+                                    wstr 01 03jmp .Lendif03 02
+                                    qv1 a0 elstack a7 estop a8
+                                    wnum 01 qv1 02
+                                    putb 01 10 02
+                                09
                                 wstr 01 03.Lelse03 02
+                                nv2 a0 elstack a7 estop a8
+                                wnum 01 nv2 02
+                                wstr 01 03:03 02
+                                putb 01 10 02
+                            09
+                            00 型4=ld 块收尾：只出 .LendifN:
+                            cond a0 01 nv3 02 a1 4
+                            lr cond 08
+                                wstr 01 03.Lendif03 02
                                 nv2 a0 elstack a7 estop a8
                                 wnum 01 nv2 02
                                 wstr 01 03:03 02
@@ -3642,9 +3661,17 @@ tt main 01 argv 02 08
             nv2 a0 lookup 01 ktok 02
             00 any local/param slot (nonzero) accepted
             cond a0 01 nv2 02 a2 0
-            00 also require k+5 is a8 (closing bracket)
-            nv3 a0 01 ktok 02 ht 5
-            tmpv a0 is2 01 nv3 a9 97 a9 56 02
+            00 结尾判定：6 记号要 k+5 是 a8；10 记号（表达式下标）k+9 是 a8
+            start a0 01 send 02 hz ktok
+            tmpv a0 01 start 02 a1 6
+            lr tmpv 08
+                nv3 a0 01 ktok 02 ht 5
+                tmpv a0 is2 01 nv3 a9 97 a9 56 02
+            09
+            lr 01 start 02 a1 10 08
+                nv3 a0 01 ktok 02 ht 9
+                tmpv a0 is2 01 nv3 a9 97 a9 56 02
+            09
             cond a0 01 cond 02 hs 01 tmpv 02
             lr cond 08
                 nv3 a0 01 ktok 02 ht 3
@@ -3671,17 +3698,17 @@ tt main 01 argv 02 08
                             cond2 a0 01 tmpv 02 a1 49
                             qv1 a0 01 qv1 02 hs 01 cond2 02
                             lr qv1 08
-                                00 表达式下标：载荷 A=k+5 / push / 载荷 B=k+7 / 二op(k+6)
+                                00 表达式下标 01 A 02 op B：A=k+5 / B=k+8 / op=k+7
                                 nv3 a0 01 ktok 02 ht 5
                                 pl 01 nv3 02
                                 putb 01 9 02
                                 wstr 01 03push rax03 02
                                 putb 01 10 02
-                                nv3 a0 01 ktok 02 ht 7
+                                nv3 a0 01 ktok 02 ht 8
                                 pl 01 nv3 02
-                                nv3 a0 01 ktok 02 ht 6
+                                nv3 a0 01 ktok 02 ht 7
                                 twoop 01 nv3 02
-                                idxv a0 01 idxv 02 ht 3
+                                idxv a0 01 idxv 02 ht 2
                             09
                             lr 01 qv1 02 a1 0 08
                             00 下标 k+4：数字→mov rax,N；变量→lea+load
@@ -4177,6 +4204,23 @@ tt main 01 argv 02 08
                 regglob 01 nv2 a9 qv1 02
                 idxv a0 01 ktok 02 ht 4
             09
+            00 th 名字 a0 数值：只读常量，和 ts 一样进全局表
+            nv3 a0 tokis 01 ktok a9 03th03 02
+            lr nv3 08
+                nv2 a0 01 ktok 02 ht 1
+                qv1 a0 8
+                regglob 01 nv2 a9 qv1 02
+                idxv a0 01 ktok 02 ht 1
+                nv3 a0 01 ktok 02 ht 2
+                cond a0 is2 01 nv3 a9 97 a9 48 02
+                lr cond 08
+                    nv3 a0 01 ktok 02 ht 3
+                    qv1 a0 str2num 01 nv3 02
+                    nv2 a0 01 nglob 02 hz 1
+                    ginit a7 nv2 a8 a0 qv1
+                    idxv a0 01 ktok 02 ht 3
+                09
+            09
         09
 
         00 ── zh 标签名 → 名字: ──
@@ -4198,6 +4242,26 @@ tt main 01 argv 02 08
             mgl 01 nv3 02
             putb 01 10 02
             incdone a0 1
+        09
+
+        00 ── ld 08 … 09（else 块）：只出 .LendifN: 标签收尾 ──
+        00 jmp .LendifN 已在前面 lr 的 09 处出过，这里只需标签
+        tmpv a0 01 incdone 02 a1 0
+        nv3 a0 is2 01 ktok a9 108 a9 100 02
+        tmpv a0 01 tmpv 02 hs 01 nv3 02
+        lr tmpv 08
+            nv3 a0 01 ktok 02 ht 1
+            cond a0 is2 01 nv3 a9 48 a9 56 02
+            lr cond 08
+                00 ld 08 … 09：整块原文跳过（块内代码前面已处理），末尾出 .LendifN:
+                wstr 01 03.Lendif03 02
+                qv1 a0 01 estop 02 ht 1
+                nv2 a0 elstack a7 qv1 a8
+                wnum 01 nv2 02
+                wstr 01 03:03 02
+                putb 01 10 02
+                incdone a0 1
+            09
         09
 
         00 ── zs 08 … 09：内联汇编，块内原文照抄 ──
