@@ -1,37 +1,17 @@
 00 ══════════════════════════════════════════════════════
-00  03 常量
+00  02 变量：只读常量
 00 ══════════════════════════════════════════════════════
 00
-00  th 定义只读常量，写在函数里面。
-00  和 tz 的区别：th 定了就不能改。
-00
-00  注意：th 不能写在函数外面。
-00  顶层只能写 tt、ts、tf、tr 四种。
+00  th 名字 a0 值     只读，不能改
 00 ══════════════════════════════════════════════════════
 
-tt sqarea 01 side 02 -> u64  08
-    th coef = 1
-    tz r = 0
-    r = 01 01 side hh side 02 hh coef 02
-    zz r
- 09
+th maxval a0 100
+th minval a0 0
 
-tt carea 01 rad 02 -> u64  08
-    th PIv = 355
-    tz r = 0
-    r = 01 01 rad hh rad 02 hh PIv 02
-    r = 01 r hl 113 02
-    zz r
- 09
-
-tt zhu 01 02 -> u64  08
-    puts 01 "side 10 的正方形面积 " 02
-    puti 01 zt sqarea 01 10 02 02
-    putc 01 10 02
-
-    puts 01 "rad 10 的圆面积近似 " 02
-    puti 01 zt carea 01 10 02 02
-    putc 01 10 02
-
+tt main 01 argv 02 08
+    st dt maxval
+    st dt 32
+    st dt minval
+    st dt 10
     zz 0
- 09
+09
