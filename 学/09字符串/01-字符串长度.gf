@@ -1,42 +1,30 @@
 00 ══════════════════════════════════════════════════════
-00  01 字符串遍历
+00  09 字符串：求长度
 00 ══════════════════════════════════════════════════════
 00
-00  字符串就是一片内存，一个字节放一个英文字符，
-00  最后放一个 0 表示结束。
-00
-00  汉字占 3 个字节（UTF-8），所以不能一个字节一个字节地数
-00  字数，得看最高位判断。
-00
-00  本例子只数 ASCII 字符（英文、数字、符号）。
+00  字符串是 0 结尾的字节序列。从头数，遇到 0 就停。
 00 ══════════════════════════════════════════════════════
 
-tt numlen 01 s 02 -> u64  08
-    tz n = 0
-    tz addr = 0
-    tz byte = 0
+tt slen 01 str 02 08
+    tz cnt a0 0
+    tz chv a0 0
+    tz adr a0 0
+    ll 08
+        adr a0 01 str 02 ht cnt
+        chv a0 fh adr
+        chv a0 01 chv 02 hs 255
+        lr 01 chv 02 a1 0 08
+            ls
+        09
+        cnt a0 01 cnt 02 ht 1
+    09
+    zz cnt
+09
 
-    addr = s
-    n = 0
-    ll  08
-        byte = fh addr
-        byte = 01 byte hs 255 02
-        lz byte 0  08 ls 09
-        n = 01 n ht 1 02
-        addr = 01 addr ht 1 02
-     09
-    zz n
- 09
-
-tt zhu 01 02 -> u64  08
-    tz s = 0
-    s = "Hello Guafang "
-
-    puts 01 s 02
-    putc 01 10 02
-    puts 01 "长度 " 02
-    puti 01 zt numlen 01 s 02 02
-    putc 01 10 02
-
+tt main 01 argv 02 08
+    tz res a0 0
+    res a0 zt slen 01 argv 02
+    st dt res
+    st dt 10
     zz 0
- 09
+09
