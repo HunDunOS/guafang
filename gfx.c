@@ -79,6 +79,53 @@ static int is_idc(int c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || (unsigned char)c >= 0x80;
 }
 
+/* ★ 卦方铁律：原文里不许有裸符号 = [ ] ,
+   只看源码原文；a0~a9 编码合法；字符串和 00 注释里放行 */
+static void 查裸符号(const char *src) {
+    const char *q = src;
+    int 串中 = 0, 行n = 1, 行首 = 1;
+    while (*q) {
+        if (*q == '\n') { 行n++; 串中 = 0; 行首 = 1; q++; continue; }
+        /* 00 注释：行首（允许前导空白）遇到 00 就跳整行 */
+        if (!串中 && 行首) {
+            const char *r = q;
+            while (*r == ' ' || *r == '\t') r++;
+            if (r[0] == '0' && r[1] == '0') {
+                while (*q && *q != '\n') q++;
+                continue;
+            }
+            行首 = 0;
+        }
+        if (q[0] == '0' && q[1] == '3') { 串中 = !串中; q += 2; 行首 = 0; continue; }
+        if (q[0] == '"') { 串中 = !串中; q++; 行首 = 0; continue; }
+        /* zs 08 ... zs 09 内联汇编块：原文照抄进汇编，里面的符号一律放行 */
+        if (!串中 && q[0]=='z' && q[1]=='s') {
+            const char *r = q + 2;
+            while (*r == ' ' || *r == '\t') r++;
+            if (r[0]=='0' && r[1]=='8') {          /* zs 08 = 块开始 */
+                q = r + 2;
+                while (*q) {
+                    if (*q == '\n') 行n++;
+                    if (q[0]=='z' && q[1]=='s') {
+                        const char *t = q + 2;
+                        while (*t==' '||*t=='\t') t++;
+                        if (t[0]=='0' && t[1]=='9') { q = t + 2; break; }   /* zs 09 = 块结束 */
+                    }
+                    q++;
+                }
+                行首 = 0; continue;
+            }
+        }
+        if (!串中) {
+            if (*q == '=' && q[1] != '=') die("第 %d 行：符号『=』不许用，卦方要写『a0』", 行n);
+            if (*q == '[') die("第 %d 行：符号『[』不许用，卦方要写『a7』", 行n);
+            if (*q == ']') die("第 %d 行：符号『]』不许用，卦方要写『a8』", 行n);
+            if (*q == ',') die("第 %d 行：符号『,』不许用，卦方要写『a9』", 行n);
+        }
+        q++; 行首 = 0;
+    }
+}
+
 static char *还原数字标点(const char *src) {
     int len = (int)strlen(src);
     char *out = malloc(len * 4 + 64);
@@ -87,6 +134,7 @@ static char *还原数字标点(const char *src) {
     int 在串里 = 0;
     int 串开 = 0;        /* 当前字符串开头的定界符（3=双引号、4=顿号），配对用 */
     int 末是标识符 = 0;  /* 输出的最后一个字符是否是标识符字符（字母/数字/下划线/中文） */
+
     while (*p) {
         /* 00 注释：跳过到行尾 */
         if (p[0] == '0' && p[1] == '0' && !末是标识符 && !在串里) {
@@ -417,6 +465,16 @@ static const char *禁用改指令(const char *op) {
     if (!strcmp(op, "^"))  return "hd";
     if (!strcmp(op, "<<")) return "dh";
     if (!strcmp(op, ">>")) return "dl";
+    if (!strcmp(op, "="))  return "a0";
+    if (!strcmp(op, "==")) return "a1";
+    if (!strcmp(op, "!=")) return "a2";
+    if (!strcmp(op, "<"))  return "a3";
+    if (!strcmp(op, ">"))  return "a4";
+    if (!strcmp(op, "<=")) return "a5";
+    if (!strcmp(op, ">=")) return "a6";
+    if (!strcmp(op, "["))  return "a7";
+    if (!strcmp(op, "]"))  return "a8";
+    if (!strcmp(op, ","))  return "a9";
     return "?";
 }
 
@@ -2510,6 +2568,7 @@ int main(int argc, char **argv) {
     char *src = xmalloc(sz + 1);
     if (fread(src, 1, sz, f) != (size_t)sz) die("读源文件失败");
     src[sz] = 0; fclose(f);
+    查裸符号(src);
     src = 还原数字标点(src);
 
     /* ★ 作者定的：整个程序写在一个大区里   08 … 09
