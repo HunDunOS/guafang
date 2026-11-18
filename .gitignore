@@ -40,3 +40,9 @@ gfx2.obj*
 *.obj.sym
 *.obj.sym.size
 新清单999.txt
+
+# 备份文件
+*.bak_*
+*.bak
+*.bad*
+*.broken*
