@@ -1,9 +1,14 @@
-tt jia 01 a u64 b u64 02 -> u64 08
-    zz 01 a ht b 02
+00 多函数：一个加法函数，主函数调用它
+tt add 01 a a9 b 02 08
+    tz r a0 0
+    r a0 01 a 02 ht b
+    zz r
 09
 
-tt zhu 01 fname 02 -> u64 08
-    tz x = zt jia 01 1, 2 02
-    st x
+tt main 01 argv 02 08
+    tz x a0 0
+    x a0 zt add 01 1 a9 2 02
+    st dt x
+    st dt 10
     zz 0
 09
