@@ -1,52 +1,32 @@
 00 ══════════════════════════════════════════════════════
-00  04 输出十六进制
+00  01 入门：输出十六进制
 00 ══════════════════════════════════════════════════════
 00
-00  写数 只会打十进制。要打十六进制，得自己算。
-00
-00  思路：一位一位取出来。
-00        取法：把数右移（位号乘 4），再和 15 相与。
-00        0 到 9 对应字符 48 到 57，
-00        10 到 15 对应字符 65 到 70，也就是 A 到 F。
-00
-00  只有 4 位的话，从位号 3 数到位号 0，一共 4 轮。
-00  这里打 32 位数，从位号 7 数到位号 0，一共 8 轮。
+00  把一个 0~15 的数转成十六进制字符：0-9 加 48，A-F 加 55
 00 ══════════════════════════════════════════════════════
 
-tt hexout 01 num 02 -> u64  08
-    tz bitn = 0
-    tz shv = 0
-    tz v = 0
-    tz ch = 0
-    tz zero = 0
+tt hexch 01 val 02 08
+    tz res a0 0
+    tz big a0 0
+    res a0 01 val 02 hs 15
+    big a0 01 res 02 a3 10
+    lr big 08
+        res a0 01 res 02 ht 48
+    09
+    lr 01 big 02 a1 0 08
+        res a0 01 res 02 ht 7
+    09
+    zz res
+09
 
-    puts 01 "0x " 02
-
-    bitn = 7
-    ll  08
-        shv = 01 bitn hh 4 02
-        v = 01 num dl shv 02
-        v = 01 v hs 15 02
-
-        ch = 01 v ht 48 02
-        lr v >= 10  08
-            ch = 01 v ht 55 02
-         09
-        putc 01 ch 02
-
-        bitn = 01 bitn hz 1 02
-        zero = 01 bitn ht 1 02
-        lz zero 0  08 ls 09
-     09
+tt main 01 argv 02 08
+    tz num a0 255
+    tz nib a0 0
+    tz out a0 0
+    nib a0 01 num 02 dl 4
+    nib a0 01 nib 02 hs 15
+    out a0 zt hexch 01 nib 02
+    st dt out
+    st dt 10
     zz 0
- 09
-
-tt zhu 01 02 -> u64  08
-    hexout 01 255 02
-    putc 01 10 02
-    hexout 01 4096 02
-    putc 01 10 02
-    hexout 01 3735928559 02
-    putc 01 10 02
-    zz 0
- 09
+09
