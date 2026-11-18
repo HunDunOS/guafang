@@ -1,38 +1,30 @@
 00 ══════════════════════════════════════════════════════
-00  02 位运算：与、或、异或、取反、移位
+00  03 运算：位运算
 00 ══════════════════════════════════════════════════════
 00
-00  hs  火水  位与        hs 0xFF 表示取低 8 位
-00  hr  火山  位或
-00  hd  火地  位异或
-00  dr  地山  按位取反
-00  dh  地火  左移        dh 3 表示乘 8
-00  dl  地雷  右移        dl 3 表示除 8
-00
-00  位运算比乘除快得多，底层代码里到处都用。
+00  hs  位与     hr  位或     hd  位异或
+00  dh  左移     dl  右移     dr  按位取反
 00 ══════════════════════════════════════════════════════
 
-tt zhu 01 02 -> u64  08
-    tz A = 12
-    tz B = 10
+tt main 01 argv 02 08
+    tz aval a0 12
+    tz bval a0 10
+    tz res a0 0
 
-    puti 01 01 A hs B 02 02
-    putc 01 32 02
+    res a0 01 aval 02 hs bval
+    st dt res
+    st dt 32
 
-    puti 01 01 A hr B 02 02
-    putc 01 32 02
+    res a0 01 aval 02 hr bval
+    st dt res
+    st dt 32
 
-    puti 01 01 A hd B 02 02
-    putc 01 32 02
+    res a0 01 aval 02 hd bval
+    st dt res
+    st dt 32
 
-    puti 01 01 5 dh 3 02 02
-    putc 01 32 02
-
-    puti 01 01 64 dl 3 02 02
-    putc 01 32 02
-
-    puti 01 01 12 hs 0xF 02 02
-    putc 01 10 02
-
+    res a0 01 aval 02 dh 2
+    st dt res
+    st dt 10
     zz 0
- 09
+09
