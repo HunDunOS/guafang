@@ -1148,15 +1148,15 @@ tt is1 01 k a9 b 02 08
 09
 
 00 is2(k,b0,b1)：token 恰好两个字节且等于 b0b1
-tt is2 01 k a9 b0 a9 b1 02 08
+tt is2 01 k a9 bb0 a9 bb1 02 08
     tz L a0 0
     tz c a0 0
     L a0 getlen 01 k 02
     lr 01 L 02 a1 2 08
         c a0 bytes 01 k a9 0 02
-        lr 01 c 02 a1 b0 08
+        lr 01 c 02 a1 bb0 08
             c a0 bytes 01 k a9 1 02
-            lr 01 c 02 a1 b1 08
+            lr 01 c 02 a1 bb1 08
                 zz 1
             09
         09
@@ -4220,6 +4220,22 @@ tt main 01 argv 02 08
                     ginit a7 nv2 a8 a0 qv1
                     idxv a0 01 ktok 02 ht 3
                 09
+            nv3 a0 tokis 01 ktok a9 03td03 02
+            lr nv3 08
+                nv2 a0 01 ktok 02 ht 1
+                qv1 a0 8
+                regglob 01 nv2 a9 qv1 02
+                idxv a0 01 ktok 02 ht 1
+                nv3 a0 01 ktok 02 ht 2
+                cond a0 is2 01 nv3 a9 97 a9 48 02
+                lr cond 08
+                    nv3 a0 01 ktok 02 ht 3
+                    qv1 a0 str2num 01 nv3 02
+                    nv2 a0 01 nglob 02 hz 1
+                    ginit a7 nv2 a8 a0 qv1
+                    idxv a0 01 ktok 02 ht 3
+                09
+            09
             09
         09
 
