@@ -154,6 +154,17 @@ static char *还原数字标点(const char *src) {
             末是标识符 = 0;
             continue;
         }
+        /* b0-b9 第三组：指针与类型符号
+           b0='.' b1='->' b2='*' b3='&' b4=':' b5='::' b6='?' b7=':' b8='~' b9='!'
+           串内不还原；前面是标识符字符时不还原 */
+        if (p[0] == 'b' && p[1] >= '0' && p[1] <= '9' && !末是标识符 && !在串里) {
+            static const char *B码[10] = { ".", "->", "*", "&", ":", "::", "?", ":", "~", "!" };
+            const char *s = B码[p[1] - '0'];
+            p += 2;
+            while (*s) out[o++] = *s++;
+            末是标识符 = 0;
+            continue;
+        }
         /* 01-09 标点编码：串内只有 03 能收尾；04=顿号是普通分隔符
            06=@ 地址/引用，07=^ 指针/异或（旧版是 / 和 \，已按用户规范更正）*/
         int code = (p[0] == '0' && p[1] >= '1' && p[1] <= '9') ? (p[1] - '0') : 0;
@@ -2051,8 +2062,9 @@ static void parse_fn(void) {
         while (!is_p("}")) {
             if (cur()->k != TK_ID) die("第 %d 行：枚举成员必须是名字", cur()->line);
             char *ename = cur()->s; adv();
-            if (is_p("=")) { adv(); expr(0); em("mov rcx, rax"); val++; }
-            else { em("mov rax, %d", val); val++; }
+            int eval = val;                      /* 枚举成员只是编译期常量，不生成任何机器码 */
+            if (is_p("=")) { adv(); if (cur()->k == TK_NUM) { eval = atoi(cur()->s); adv(); } }
+            val = eval + 1;
             /* 定义为全局常量 */
             int g = global_find(ename);
             if (g < 0) { g = nglobals++; globals[g].name = ename; }
